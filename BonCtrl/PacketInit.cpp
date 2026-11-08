@@ -14,13 +14,13 @@ void CPacketInit::ClearBuff()
 
 //入力バッファを188バイト単位のTSに変換し、188の倍数になるようにそろえる
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
 // inData			[IN]入力TSデータ
 // inSize			[IN]inDataのサイズ（BYTE単位）
 // outData			[OUT]188バイトに整列したバッファ（次回呼び出しまで保持）
 // outSize			[OUT]outDataのサイズ（BYTE単位）
-BOOL CPacketInit::GetTSData(
+bool CPacketInit::GetTSData(
 	const BYTE* inData,
 	DWORD inSize,
 	BYTE** outData,
@@ -28,7 +28,7 @@ BOOL CPacketInit::GetTSData(
 )
 {
 	if( inData == nullptr || inSize == 0 || outData == nullptr || outSize == nullptr ){
-		return FALSE;
+		return false;
 	}
 
 	if( this->packetSize != 0 ){
@@ -62,7 +62,7 @@ BOOL CPacketInit::GetTSData(
 				this->nextStartBuff.assign(inData + inPos, inData + inSize);
 			}
 			*outData = &this->outBuff.front();
-			return TRUE;
+			return true;
 		}
 	}
 
@@ -72,15 +72,15 @@ BOOL CPacketInit::GetTSData(
 		if( pos < nss && this->nextStartBuff[pos] == 0x47 || pos >= nss && inData[pos - nss] == 0x47 ){
 			for( int i = 0; i < 3; i++ ){
 				this->packetSize = (i == 0 ? 188 : i == 1 ? 192 : 204);
-				BOOL syncOK = FALSE;
+				bool syncOK = false;
 				for( DWORD j = pos + this->packetSize; j < nss + inSize; j += this->packetSize ){
 					if( j < nss && this->nextStartBuff[j] != 0x47 || j >= nss && inData[j - nss] != 0x47 ){
-						syncOK = FALSE;
+						syncOK = false;
 						break;
 					}
-					syncOK = TRUE;
+					syncOK = true;
 				}
-				if( syncOK == FALSE ){
+				if( syncOK == false ){
 					this->packetSize = 0;
 				}else if( pos < nss ){
 					this->nextStartBuff.erase(this->nextStartBuff.begin(), this->nextStartBuff.begin() + pos);
@@ -106,5 +106,5 @@ BOOL CPacketInit::GetTSData(
 		}
 		this->nextStartBuff.insert(this->nextStartBuff.end(), inData, inData + inSize);
 	}
-	return FALSE;
+	return false;
 }

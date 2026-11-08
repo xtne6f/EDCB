@@ -5,13 +5,13 @@
 #include "../Common/PathUtil.h"
 
 //チャンネル設定ファイルを読み込む
-BOOL CChSetUtil::LoadChSet(
+bool CChSetUtil::LoadChSet(
 	const wstring& settingPath,
 	const wstring& driverName,
 	wstring tunerName
 	)
 {
-	BOOL ret = TRUE;
+	bool ret = true;
 	CheckFileName(tunerName);
 	bool mightExist = false;
 	if( tunerName.empty() == false ){
@@ -20,23 +20,23 @@ BOOL CChSetUtil::LoadChSet(
 		if( UtilFileExists(chSet4FilePath, &mightExist).first || mightExist ){
 			mightExist = true;
 			if( this->chText4.ParseText(chSet4FilePath.c_str()) == false ){
-				ret = FALSE;
+				ret = false;
 			}
 		}
 	}
 	if( mightExist == false ){
 		if( this->chText4.ParseText(fs_path(settingPath).append(fs_path(driverName).stem().concat(L"().ChSet4.txt").native()).c_str()) == false ){
-			ret = FALSE;
+			ret = false;
 		}
 	}
 	if( this->chText5.ParseText(fs_path(settingPath).append(L"ChSet5.txt").c_str()) == false ){
-		ret = FALSE;
+		ret = false;
 	}
 	return ret;
 }
 
 //チャンネル設定ファイルを保存する
-BOOL CChSetUtil::SaveChSet(
+bool CChSetUtil::SaveChSet(
 	const wstring& settingPath,
 	const wstring& driverName,
 	wstring tunerName
@@ -50,11 +50,11 @@ BOOL CChSetUtil::SaveChSet(
 #ifdef _WIN32
 	HANDLE waitEvent = CreateEvent(nullptr, FALSE, TRUE, L"Global\\" CHSET_SAVE_EVENT_WAIT);
 	if( waitEvent == nullptr ){
-		return FALSE;
+		return false;
 	}
 	if(WaitForSingleObject(waitEvent, 10000) == WAIT_TIMEOUT){
 		CloseHandle(waitEvent);
-		return FALSE;
+		return false;
 	}
 #else
 	//大域的なイベントオブジェクト相当のものは用意していないのでミューテックスを使う
@@ -64,14 +64,14 @@ BOOL CChSetUtil::SaveChSet(
 		waitMutex = UtilCreateGlobalMutex(CHSET_SAVE_EVENT_WAIT);
 	}
 	if( !waitMutex ){
-		return FALSE;
+		return false;
 	}
 #endif
 
-	BOOL ret = TRUE;
+	bool ret = true;
 	this->chText4.SetFilePath(chSet4FilePath.c_str());
 	if( this->chText4.SaveText() == false ){
-		ret = FALSE;
+		ret = false;
 	}else if( tunerName.empty() == false ){
 		//チューナー名付きと無しのファイルは同時に存在すべきでない
 		DeleteFile(fs_path(settingPath).append(fs_path(driverName).stem().concat(L"().ChSet4.txt").native()).c_str());
@@ -86,7 +86,7 @@ BOOL CChSetUtil::SaveChSet(
 	}
 	//保存
 	if( mergeChText5.SaveText() == false ){
-		ret = FALSE;
+		ret = false;
 	}
 	//最新版を再読み込み
 	this->chText5.ParseText(chSet5FilePath.c_str());
@@ -100,46 +100,45 @@ BOOL CChSetUtil::SaveChSet(
 }
 
 //チャンネルスキャン用にクリアする
-BOOL CChSetUtil::Clear()
+void CChSetUtil::Clear()
 {
 	this->chText4.ParseText(L"");
 	this->chText5.ParseText(L"");
-	return TRUE;
 }
 
 //チャンネル情報を追加する
-BOOL CChSetUtil::AddServiceInfo(
+void CChSetUtil::AddServiceInfo(
 	DWORD space,
 	DWORD ch,
 	const wstring& chName,
-	SERVICE_INFO* serviceInfo
+	const SERVICE_INFO& serviceInfo
 	)
 {
 	CH_DATA4 item4;
 
 	item4.space = space;
 	item4.ch = ch;
-	item4.originalNetworkID = serviceInfo->original_network_id;
-	item4.transportStreamID = serviceInfo->transport_stream_id;
-	item4.serviceID = serviceInfo->service_id;
+	item4.originalNetworkID = serviceInfo.original_network_id;
+	item4.transportStreamID = serviceInfo.transport_stream_id;
+	item4.serviceID = serviceInfo.service_id;
 	item4.serviceType = 0;
 	item4.partialFlag = FALSE;
 	item4.useViewFlag = TRUE;
 	item4.remoconID = 0;
-	if( serviceInfo->extInfo != nullptr ){
-		item4.serviceType = serviceInfo->extInfo->service_type;
-		item4.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
-		if( IsVideoServiceType(item4.serviceType) == FALSE ){
+	if( serviceInfo.extInfo != nullptr ){
+		item4.serviceType = serviceInfo.extInfo->service_type;
+		item4.partialFlag = serviceInfo.extInfo->partialReceptionFlag;
+		if( IsVideoServiceType(item4.serviceType) == false ){
 			item4.useViewFlag = FALSE;
 		}
-		item4.serviceName = serviceInfo->extInfo->service_name;
+		item4.serviceName = serviceInfo.extInfo->service_name;
 		item4.chName = chName;
-		if( serviceInfo->extInfo->ts_name != nullptr ){
-			item4.networkName = serviceInfo->extInfo->ts_name;
-		}else if( serviceInfo->extInfo->network_name != nullptr ){
-			item4.networkName = serviceInfo->extInfo->network_name;
+		if( serviceInfo.extInfo->ts_name != nullptr ){
+			item4.networkName = serviceInfo.extInfo->ts_name;
+		}else if( serviceInfo.extInfo->network_name != nullptr ){
+			item4.networkName = serviceInfo.extInfo->network_name;
 		}
-		item4.remoconID = serviceInfo->extInfo->remote_control_key_id;
+		item4.remoconID = serviceInfo.extInfo->remote_control_key_id;
 	}
 
 	map<DWORD, CH_DATA4>::const_iterator itr;
@@ -158,36 +157,34 @@ BOOL CChSetUtil::AddServiceInfo(
 
 	CH_DATA5 item5;
 
-	item5.originalNetworkID = serviceInfo->original_network_id;
-	item5.transportStreamID = serviceInfo->transport_stream_id;
-	item5.serviceID = serviceInfo->service_id;
+	item5.originalNetworkID = serviceInfo.original_network_id;
+	item5.transportStreamID = serviceInfo.transport_stream_id;
+	item5.serviceID = serviceInfo.service_id;
 	item5.serviceType = 0;
 	item5.partialFlag = FALSE;
 	item5.epgCapFlag = TRUE;
 	item5.searchFlag = TRUE;
 	item5.remoconID = 0;
-	if( serviceInfo->extInfo != nullptr ){
-		item5.serviceType = serviceInfo->extInfo->service_type;
-		item5.partialFlag = serviceInfo->extInfo->partialReceptionFlag;
-		item5.serviceName = serviceInfo->extInfo->service_name;
-		if( serviceInfo->extInfo->ts_name != nullptr ){
-			item5.networkName = serviceInfo->extInfo->ts_name;
-		}else if( serviceInfo->extInfo->network_name != nullptr ){
-			item5.networkName = serviceInfo->extInfo->network_name;
+	if( serviceInfo.extInfo != nullptr ){
+		item5.serviceType = serviceInfo.extInfo->service_type;
+		item5.partialFlag = serviceInfo.extInfo->partialReceptionFlag;
+		item5.serviceName = serviceInfo.extInfo->service_name;
+		if( serviceInfo.extInfo->ts_name != nullptr ){
+			item5.networkName = serviceInfo.extInfo->ts_name;
+		}else if( serviceInfo.extInfo->network_name != nullptr ){
+			item5.networkName = serviceInfo.extInfo->network_name;
 		}
-		if( IsVideoServiceType(item4.serviceType) == FALSE ){
+		if( IsVideoServiceType(item4.serviceType) == false ){
 			item5.epgCapFlag = FALSE;
 			item5.searchFlag = FALSE;
 		}
 	}
 
 	this->chText5.AddCh(item5);
-
-	return TRUE;
 }
 
 //IDから物理チャンネルを検索する
-BOOL CChSetUtil::GetCh(
+bool CChSetUtil::GetCh(
 	WORD ONID,
 	WORD TSID,
 	WORD SID,
@@ -195,11 +192,11 @@ BOOL CChSetUtil::GetCh(
 	DWORD& ch
 	) const
 {
-	BOOL ret = FALSE;
+	bool ret = false;
 	for( const auto& ch4 : this->chText4.GetMap() ){
 		if( ch4.second.originalNetworkID == ONID && ch4.second.transportStreamID == TSID ){
-			if( ret == FALSE || ch4.second.serviceID == SID ){
-				ret = TRUE;
+			if( ret == false || ch4.second.serviceID == SID ){
+				ret = true;
 				space = ch4.second.space;
 				ch = ch4.second.ch;
 				//SIDが同じものを優先する
@@ -261,7 +258,7 @@ vector<SET_CH_INFO> CChSetUtil::GetEpgCapServiceAll(
 	return ret;
 }
 
-BOOL CChSetUtil::IsPartial(
+bool CChSetUtil::IsPartial(
 	WORD ONID,
 	WORD TSID,
 	WORD SID
@@ -272,9 +269,9 @@ BOOL CChSetUtil::IsPartial(
 	itr = this->chText5.GetMap().find(key);
 	if( itr != this->chText5.GetMap().end() ){
 		if( itr->second.partialFlag == 1 ){
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 

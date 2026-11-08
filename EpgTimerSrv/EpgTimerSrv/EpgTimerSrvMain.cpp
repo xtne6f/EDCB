@@ -2304,7 +2304,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			wstring val;
 			if( cmd.ReadVALUE(&val) ){
 				std::shared_ptr<CTimeShiftUtil> util = std::make_shared<CTimeShiftUtil>();
-				if( util->OpenTimeShift(val.c_str(), TRUE) ){
+				if( util->OpenTimeShift(val.c_str(), true) ){
 					res.WriteVALUE(sys->streamingManager.push(util));
 					res.SetParam(CMD_SUCCESS);
 				}
@@ -2397,7 +2397,7 @@ void CEpgTimerSrvMain::CtrlCmdCallback(CEpgTimerSrvMain* sys, const CCmdStream& 
 			if( cmd.ReadVALUE(&val) &&
 			    sys->reserveManager.GetRecFilePath(val, resVal.filePath) ){
 				std::shared_ptr<CTimeShiftUtil> util = std::make_shared<CTimeShiftUtil>();
-				if( util->OpenTimeShift(resVal.filePath.c_str(), FALSE) ){
+				if( util->OpenTimeShift(resVal.filePath.c_str(), false) ){
 					resVal.ctrlID = sys->streamingManager.push(util);
 					res.WriteVALUE(resVal);
 					res.SetParam(CMD_SUCCESS);

@@ -7,11 +7,11 @@ public:
 
 	//PMT作成時のモード
 	//引数：
-	// needCaption			[IN]字幕データを含めるかどうか（TRUE:含める、FALSE：含めない）
-	// needData				[IN]データカルーセルを含めるかどうか（TRUE:含める、FALSE：含めない）
+	// needCaption			[IN]字幕データを含めるかどうか（true:含める、false:含めない）
+	// needData				[IN]データカルーセルを含めるかどうか（true:含める、false:含めない）
 	void SetCreateMode(
-		BOOL needCaption_,
-		BOOL needData_
+		bool needCaption_,
+		bool needData_
 	);
 
 	//作成元となるPMTセクションを設定
@@ -26,23 +26,23 @@ public:
 	);
 
 	//ECMのPIDかどうか
-	BOOL IsEcmPID(
+	bool IsEcmPID(
 		WORD pid
 	);
 
 	//作成PMTのエレメンタリストリームに含まれるPIDかどうか
-	BOOL IsElementaryPID(
+	bool IsElementaryPID(
 		WORD pid
 	);
 
 	//作成PMTのバッファポインタを取得
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// true（成功）、false（失敗）
 	//引数：
 	// buff					[OUT]作成したPMTパケットへのポインタ（次回呼び出し時まで有効）
 	// size					[OUT]buffのサイズ
 	// pid					[IN]PID
-	BOOL GetPacket(
+	bool GetPacket(
 		BYTE** buff,
 		DWORD* size,
 		WORD pid
@@ -54,8 +54,8 @@ public:
 protected:
 	void CreatePMT();
 protected:
-	BOOL needCaption;
-	BOOL needData;
+	bool needCaption;
+	bool needData;
 	vector<BYTE> lastSection;
 
 	struct SECOND_DESC_BUFF {

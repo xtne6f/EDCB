@@ -7,7 +7,7 @@ CTSPacketUtil::CTSPacketUtil(void)
 	data_byte = nullptr;
 }
 
-BOOL CTSPacketUtil::Set188TS(const BYTE* data, DWORD dataSize)
+bool CTSPacketUtil::Set188TS(const BYTE* data, DWORD dataSize)
 {
 	data_byteSize = 0;
 	data_byte = nullptr;
@@ -15,11 +15,11 @@ BOOL CTSPacketUtil::Set188TS(const BYTE* data, DWORD dataSize)
 	if( data == nullptr || dataSize != 188 || data[0] != 0x47 ){
 		// Not a TS packet
 		transport_error_indicator = 0;
-		return FALSE;
+		return false;
 	}
 	transport_error_indicator = GetTransportErrorIndicatorFrom188TS(data);
 	if( transport_error_indicator == 1 ){
-		return FALSE;
+		return false;
 	}
 	payload_unit_start_indicator = GetPayloadUnitStartIndicatorFrom188TS(data);
 	transport_priority = GetTransportPriorityFrom188TS(data);
@@ -64,12 +64,12 @@ BOOL CTSPacketUtil::Set188TS(const BYTE* data, DWORD dataSize)
 	}
 	if( adaptation_field_control == 0x01 || adaptation_field_control == 0x03 ){
 		if( 188 < readSize ){
-			return FALSE;
+			return false;
 		}
 		data_byteSize = (BYTE)(188-readSize);
 		if( data_byteSize > 0 ){
 			data_byte = data+readSize;
 		}
 	}
-	return TRUE;
+	return true;
 }

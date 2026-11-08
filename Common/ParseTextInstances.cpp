@@ -159,7 +159,7 @@ void CParseChText4::DelCh(DWORD key)
 	this->itemMap.erase(key);
 }
 
-void CParseChText4::SetUseViewFlag(DWORD key, BOOL useViewFlag)
+void CParseChText4::SetUseViewFlag(DWORD key, bool useViewFlag)
 {
 	map<DWORD, CH_DATA4>::iterator itr = this->itemMap.find(key);
 	if( itr != this->itemMap.end() ){
@@ -230,7 +230,7 @@ void CParseChText5::DelCh(LONGLONG key)
 	}
 }
 
-bool CParseChText5::SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, BOOL epgCapFlag)
+bool CParseChText5::SetEpgCapMode(WORD originalNetworkID, WORD transportStreamID, WORD serviceID, bool epgCapFlag)
 {
 	map<LONGLONG, CH_DATA5>::iterator itr = this->itemMap.find((LONGLONG)originalNetworkID << 32 | (LONGLONG)transportStreamID << 16 | serviceID);
 	if( itr != this->itemMap.end() ){
@@ -890,10 +890,21 @@ bool CParseReserveText::SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_
 {
 	if( this->saveNextID == 0 ){
 		//NextIDコメントが無かったときは従来どおり予約日時順で保存する
-		vector<pair<LONGLONG, const RESERVE_DATA*>> sortItemList = GetReserveList();
-		for( const auto& item : sortItemList ){
-			itemList.push_back(this->itemMap.find(item.second->reserveID));
+		itemList.reserve(this->itemMap.size());
+		for( map<DWORD, RESERVE_DATA>::const_iterator itr = this->itemMap.begin(); itr != this->itemMap.end(); itr++ ){
+			itemList.push_back(itr);
 		}
+		std::sort(itemList.begin(), itemList.end(), [](map<DWORD, RESERVE_DATA>::const_iterator a, map<DWORD, RESERVE_DATA>::const_iterator b) -> bool {
+			const SYSTEMTIME& sa = a->second.startTime;
+			const SYSTEMTIME& sb = b->second.startTime;
+			return sa.wYear < sb.wYear || sa.wYear == sb.wYear && (
+			       sa.wMonth < sb.wMonth || sa.wMonth == sb.wMonth && (
+			       sa.wDay < sb.wDay || sa.wDay == sb.wDay && (
+			       sa.wHour < sb.wHour || sa.wHour == sb.wHour && (
+			       sa.wMinute < sb.wMinute || sa.wMinute == sb.wMinute && (
+			       sa.wSecond < sb.wSecond || sa.wSecond == sb.wSecond && (
+			       a->second.transportStreamID < b->second.transportStreamID))))));
+		});
 		return true;
 	}
 	if( this->itemMap.empty() == false && this->itemMap.rbegin()->first >= this->itemMap.begin()->first + 50000000 ){
@@ -908,29 +919,6 @@ bool CParseReserveText::SelectItemToSave(vector<map<DWORD, RESERVE_DATA>::const_
 		return true;
 	}
 	return false;
-}
-
-vector<pair<LONGLONG, const RESERVE_DATA*>> CParseReserveText::GetReserveList(BOOL calcMargin, int defStartMargin) const
-{
-	vector<pair<LONGLONG, const RESERVE_DATA*>> retList;
-	retList.reserve(this->itemMap.size());
-
-	//日時順にソート
-	for( const auto& item : this->itemMap ){
-		LONGLONG startTime = ConvertI64Time(item.second.startTime);
-		if( calcMargin != FALSE ){
-			LONGLONG endTime = startTime + item.second.durationSecond * I64_1SEC;
-			LONGLONG startMargin = defStartMargin * I64_1SEC;
-			if( item.second.recSetting.useMargineFlag == TRUE ){
-				startMargin = item.second.recSetting.startMargine * I64_1SEC;
-			}
-			//開始マージンは元の予約終了時刻を超えて負であってはならない
-			startTime -= max(startMargin, startTime - endTime);
-		}
-		retList.emplace_back((startTime / I64_1SEC) << 16 | item.second.transportStreamID, &item.second);
-	}
-	std::sort(retList.begin(), retList.end());
-	return retList;
 }
 
 const vector<pair<ULONGLONG, DWORD>>& CParseReserveText::GetSortByEventList() const

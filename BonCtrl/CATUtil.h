@@ -7,7 +7,7 @@ class CCATUtil
 {
 public:
 	//Get系メソッドの返値が変化した可能性があるとき真が返る
-	BOOL AddPacket(const CTSPacketUtil& packet);
+	bool AddPacket(const CTSPacketUtil& packet);
 	const vector<WORD>& GetPIDList() const { return PIDList; }
 
 protected:
@@ -16,6 +16,6 @@ protected:
 	vector<WORD> PIDList;
 
 protected:
-	BOOL DecodeCAT(BYTE* data, DWORD dataSize);
+	bool DecodeCAT(BYTE* data, DWORD dataSize);
 };
 

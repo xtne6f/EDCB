@@ -17,9 +17,9 @@ public:
 
 	//コマンド送信方法の設定
 	//引数：
-	// tcpFlag		[IN] TRUE：TCP/IPモード、FALSE：名前付きパイプモード
+	// tcpFlag		[IN] true：TCP/IPモード、false：名前付きパイプモード
 	void SetSendMode(
-		BOOL tcpFlag_
+		bool tcpFlag_
 		);
 #endif
 
@@ -500,7 +500,7 @@ public:
 	}
 
 private:
-	BOOL tcpFlag;
+	bool tcpFlag;
 	DWORD connectTimeOut;
 	wstring pipeName;
 	wstring sendIP;

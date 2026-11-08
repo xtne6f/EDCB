@@ -8,28 +8,28 @@ class CChSetUtil
 {
 public:
 	//チャンネル設定ファイルを読み込む
-	BOOL LoadChSet(
+	bool LoadChSet(
 		const wstring& settingPath,
 		const wstring& driverName,
 		wstring tunerName
 		);
 
 	//チャンネル設定ファイルを保存する
-	BOOL SaveChSet(
+	bool SaveChSet(
 		const wstring& settingPath,
 		const wstring& driverName,
 		wstring tunerName
 		);
 
 	//チャンネルスキャン用にクリアする
-	BOOL Clear();
+	void Clear();
 
 	//チャンネル情報を追加する
-	BOOL AddServiceInfo(
+	void AddServiceInfo(
 		DWORD space,
 		DWORD ch,
 		const wstring& chName,
-		SERVICE_INFO* serviceInfo
+		const SERVICE_INFO& serviceInfo
 		);
 
 	//サービス一覧を取得する
@@ -39,7 +39,7 @@ public:
 	}
 
 	//IDから物理チャンネルを検索する
-	BOOL GetCh(
+	bool GetCh(
 		WORD ONID,
 		WORD TSID,
 		WORD SID,
@@ -57,14 +57,14 @@ public:
 		) const;
 
 	//部分受信サービスかどうか
-	BOOL IsPartial(
+	bool IsPartial(
 		WORD ONID,
 		WORD TSID,
 		WORD SID
 		) const;
 
 	//サービスタイプが映像サービスかどうか
-	static BOOL IsVideoServiceType(
+	static bool IsVideoServiceType(
 		WORD serviceType
 		){
 		return serviceType == 0x01 //デジタルTV

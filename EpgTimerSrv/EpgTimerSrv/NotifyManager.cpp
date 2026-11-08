@@ -331,7 +331,7 @@ void CNotifyManager::SendNotifyThread(CNotifyManager* sys)
 				CSendCtrlCmd sendCtrl;
 				if( tcp ){
 #ifdef _WIN32
-					sendCtrl.SetSendMode(TRUE);
+					sendCtrl.SetSendMode(true);
 					sendCtrl.SetNWSetting(registTCP[i].first, registTCP[i].second);
 #else
 					AddDebugLog(L"CNotifyManager: Notification by TCP/IP registration is not supported.");

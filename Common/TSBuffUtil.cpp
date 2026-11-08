@@ -7,7 +7,7 @@ CTSBuffUtil::CTSBuffUtil()
 	this->lastPID = 0xFFFF;
 	this->lastCounter = 0xFF;
 
-	this->duplicateFlag = FALSE;
+	this->duplicateFlag = false;
 }
 
 void CTSBuffUtil::Clear()
@@ -20,85 +20,85 @@ void CTSBuffUtil::Clear()
 	this->lastCounter = 0xFF;
 }
 
-BOOL CTSBuffUtil::CheckCounter(const CTSPacketUtil* tsPacket)
+bool CTSBuffUtil::CheckCounter(const CTSPacketUtil* tsPacket)
 {
 	if( tsPacket->PID == 0x1FFF ){
 		//NULLパケット時は意味なし
-		this->duplicateFlag = FALSE;
-		return TRUE;
+		this->duplicateFlag = false;
+		return true;
 	}
 	if( this->lastPID != 0xFFFF || this->lastCounter != 0xFF ){
 		if( this->lastPID != tsPacket->PID ){
 			//PID変更されたので不連続
-			this->duplicateFlag = FALSE;
-			return FALSE;
+			this->duplicateFlag = false;
+			return false;
 		}else{
 			if( tsPacket->adaptation_field_control == 0x00 || tsPacket->adaptation_field_control == 0x02 ){
 				//ペイロードが存在しない場合は意味なし
-				this->duplicateFlag = FALSE;
+				this->duplicateFlag = false;
 				if( tsPacket->has_adaptation_field_flags ){
 					if( tsPacket->transport_scrambling_control == 0 ){
 						if(tsPacket->discontinuity_indicator == 1){
 							//不連続の判定が必要
-							return FALSE;
+							return false;
 						}else{
-							return TRUE;
+							return true;
 						}
 					}else{
-						return TRUE;
+						return true;
 					}
 				}else{
-					return TRUE;
+					return true;
 				}
 			}
 			if( this->lastCounter == tsPacket->continuity_counter ){
 				if( tsPacket->adaptation_field_control == 0x01 || tsPacket->adaptation_field_control == 0x03 ){
 					if( tsPacket->transport_scrambling_control == 0 ){
-						if( this->duplicateFlag == FALSE ){
+						if( this->duplicateFlag == false ){
 							//重送？一応連続と判定
-							this->duplicateFlag = TRUE;
+							this->duplicateFlag = true;
 							if( tsPacket->has_adaptation_field_flags ){
 								if(tsPacket->discontinuity_indicator == 1){
 									//不連続の判定が必要
-									return FALSE;
+									return false;
 								}else{
-									return TRUE;
+									return true;
 								}
 							}else{
-								return TRUE;
+								return true;
 							}
 						}else{
 							//前回重送と判断してるので不連続
-							this->duplicateFlag = FALSE;
-							return FALSE;
+							this->duplicateFlag = false;
+							return false;
 						}
 					}else{
-						return TRUE;
+						return true;
 					}
 				}
 			}
 			if( this->lastCounter+1 != tsPacket->continuity_counter ){
 				if( this->lastCounter != 0x0F && tsPacket->continuity_counter != 0x00 ){
 					//カウンターが飛んだので不連続
-					return FALSE;
+					return false;
 				}
 			}
 		}
 	}
-	return TRUE;
+	return true;
 }
 
-DWORD CTSBuffUtil::Add188TS(const CTSPacketUtil& tsPacket_)
+CTSBuffUtil::ADD_RESULT CTSBuffUtil::Add188TS(const CTSPacketUtil& tsPacket_)
 {
 	const CTSPacketUtil* tsPacket = &tsPacket_;
 
 	//バッファをすべて受け取る
 	BYTE* sectionData;
 	DWORD dataSize;
-	while( GetSectionBuff(&sectionData, &dataSize) != FALSE );
+	while( GetSectionBuff(&sectionData, &dataSize) );
 
 	//カウンターチェック
-	if( CheckCounter(tsPacket) == FALSE ){
+	if( CheckCounter(tsPacket) == false ){
 		Clear();
 	}
 	//スクランブルのチェック
@@ -111,7 +111,7 @@ DWORD CTSBuffUtil::Add188TS(const CTSPacketUtil& tsPacket_)
 	if( tsPacket->payload_unit_start_indicator == 1 ){
 		if( tsPacket->data_byteSize < 3 ){
 			//サイズが小さすぎる
-			return FALSE;
+			return ERR_FALSE;
 		}
 		if(tsPacket->data_byte[0] == 0x00 && tsPacket->data_byte[1] == 0x00 && tsPacket->data_byte[2] == 0x01){
 			//PES
@@ -151,18 +151,18 @@ DWORD CTSBuffUtil::Add188TS(const CTSPacketUtil& tsPacket_)
 
 }
 
-BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
+bool CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 {
 	if( sectionSize == 0 && carryPacket.empty() == false ){
 		//繰り越しパケットを処理
-		if( AddSectionBuff(&carryPacket.front(), (BYTE)carryPacket.size(), 1) != 2 ){
+		if( AddSectionBuff(&carryPacket.front(), (BYTE)carryPacket.size(), 1) != INTERNAL_ERR_CARRY_OVER ){
 			carryPacket.clear();
 		}
 	}
 	if( sectionSize == 0 || sectionSize != sectionBuff.size() ){
 		//sectionBuffはGet済みか作成途中
 		carryPacket.clear();
-		return FALSE;
+		return false;
 	}
 
 	*sectionData = &sectionBuff.front();
@@ -170,10 +170,10 @@ BOOL CTSBuffUtil::GetSectionBuff(BYTE** sectionData, DWORD* dataSize)
 	//sectionBuffがGet済みであることを示す
 	sectionSize = 0;
 
-	return TRUE;
+	return true;
 }
 
-DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE unitStartIndicator)
+CTSBuffUtil::ADD_RESULT CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE unitStartIndicator)
 {
 	if( payloadSize == 0 || payload == nullptr ){
 		return ERR_ADD_NEXT;
@@ -188,7 +188,7 @@ DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE un
 			//サイズが小さすぎる
 			AddDebugLogFormat(L"★psi size err PID 0x%04X", this->lastPID);
 			sectionSize = 0;
-			return FALSE;
+			return ERR_FALSE;
 		}
 		if( sectionSize != 0 && sectionSize != sectionBuff.size() ){
 			if( sectionSize - sectionBuff.size() == pointer_field ){
@@ -196,7 +196,7 @@ DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE un
 				//残りのペイロードを繰り越す
 				carryPacket.assign(1, 0);
 				carryPacket.insert(carryPacket.end(), payload + 1 + pointer_field, payload + payloadSize);
-				return TRUE;
+				return NO_ERR;
 			}else{
 				//サイズがおかしいのでクリア
 				AddDebugLogFormat(L"★psi section size err PID 0x%04X", this->lastPID);
@@ -221,11 +221,11 @@ DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE un
 			if( carryPacket.empty() == false && payload == &carryPacket.front() ){
 				carryPacket.erase(carryPacket.begin() + readSize, carryPacket.begin() + readSize + sectionSize);
 				//マルチセクションによる連続繰り越しであることを示す特別な戻り値
-				return 2;
+				return INTERNAL_ERR_CARRY_OVER;
 			}else{
 				carryPacket.assign(1, 0);
 				carryPacket.insert(carryPacket.end(), payload + readSize + sectionSize, payload + payloadSize);
-				return TRUE;
+				return NO_ERR;
 			}
 		}else{
 			//次のパケット必要
@@ -235,7 +235,7 @@ DWORD CTSBuffUtil::AddSectionBuff(const BYTE* payload, BYTE payloadSize, BYTE un
 		//複数パケットにまたがっている
 		sectionBuff.insert(sectionBuff.end(), payload, payload + min((DWORD)payloadSize, sectionSize - (DWORD)sectionBuff.size()));
 		if( sectionSize == sectionBuff.size() ){
-			return TRUE;
+			return NO_ERR;
 		}else{
 			return ERR_ADD_NEXT;
 		}

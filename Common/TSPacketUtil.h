@@ -113,7 +113,7 @@ public:
 public:
 	CTSPacketUtil(void);
 
-	BOOL Set188TS(const BYTE* data, DWORD dataSize);
+	bool Set188TS(const BYTE* data, DWORD dataSize);
 	static BYTE GetTransportErrorIndicatorFrom188TS(const BYTE* data) { return data[1] >> 7; }
 	static BYTE GetPayloadUnitStartIndicatorFrom188TS(const BYTE* data) { return (data[1] >> 6) & 0x01; }
 	static BYTE GetTransportPriorityFrom188TS(const BYTE* data) { return (data[1] >> 5) & 0x01; }

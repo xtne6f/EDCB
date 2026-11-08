@@ -4,10 +4,10 @@
 #include "../Common/EpgTimerUtil.h"
 
 
-BOOL CCATUtil::AddPacket(const CTSPacketUtil& packet)
+bool CCATUtil::AddPacket(const CTSPacketUtil& packet)
 {
-	BOOL updated = FALSE;
-	if( buffUtil.Add188TS(packet) == TRUE ){
+	bool updated = false;
+	if( buffUtil.Add188TS(packet) == CTSBuffUtil::NO_ERR ){
 		BYTE* section = nullptr;
 		DWORD sectionSize = 0;
 		while( buffUtil.GetSectionBuff(&section, &sectionSize) ){
@@ -17,12 +17,12 @@ BOOL CCATUtil::AddPacket(const CTSPacketUtil& packet)
 	return updated;
 }
 
-BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
+bool CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 {
 	if( data == nullptr || dataSize < 3 ||
 	    (dataSize == lastSection.size() && std::equal(data, data + dataSize, lastSection.begin())) ){
 		//解析不要
-		return FALSE;
+		return false;
 	}
 
 	DWORD readSize = 0;
@@ -36,27 +36,27 @@ BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 	if( section_syntax_indicator != 1 || (data[1]&0x40) != 0 ){
 		//固定値がおかしい
 		AddDebugLog(L"CCATUtil::section_syntax_indicator Err");
-		return FALSE;
+		return false;
 	}
 	if( table_id != 0x01 ){
 		//table_idがおかしい
 		AddDebugLog(L"CCATUtil::table_id Err");
-		return FALSE;
+		return false;
 	}
 	if( readSize+section_length > dataSize || section_length < 5 + 4 ){
 		//サイズ異常
 		AddDebugLogFormat(L"CCATUtil::section_length %d Err", section_length);
-		return FALSE;
+		return false;
 	}
 	//CRCチェック
 	if( CalcCrc32(3+section_length, data) != 0 ){
 		AddDebugLog(L"CCATUtil::crc32 Err");
-		return FALSE;
+		return false;
 	}
 	BYTE current_next_indicator = data[readSize+2]&0x01;
 	if( current_next_indicator == 0 ){
 		//解析不要
-		return FALSE;
+		return false;
 	}
 	lastSection.assign(data, data + dataSize);
 
@@ -87,5 +87,5 @@ BOOL CCATUtil::DecodeCAT(BYTE* data, DWORD dataSize)
 
 	}
 
-	return TRUE;
+	return true;
 }

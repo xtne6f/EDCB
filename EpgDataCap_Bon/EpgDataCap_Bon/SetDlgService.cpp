@@ -142,7 +142,7 @@ void CSetDlgService::SynchronizeCheckState()
 			DWORD key = (DWORD)ListView_GetItemParam(GetDlgItem(IDC_LIST_SERVICE), i, 0);
 			BOOL useViewFlag = ListView_GetCheckState(GetDlgItem(IDC_LIST_SERVICE), i);
 			if( itr->second.first.GetMap().find(key)->second.useViewFlag != useViewFlag ){
-				itr->second.first.SetUseViewFlag(key, useViewFlag);
+				itr->second.first.SetUseViewFlag(key, useViewFlag != FALSE);
 				itr->second.second = true;
 			}
 		}

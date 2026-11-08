@@ -24,19 +24,19 @@ public:
 
 	//タイムシフト用ファイルを開く
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// true（成功）、false（失敗）
 	//引数：
 	// filePath		[IN]タイムシフト用バッファファイルのパス
 	// fileMode		[IN]録画済みファイル再生モード
-	BOOL OpenTimeShift(
+	bool OpenTimeShift(
 		LPCWSTR filePath_,
-		BOOL fileMode_
+		bool fileMode_
 		);
 
 	//タイムシフト送信を開始する
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
-	BOOL StartTimeShift();
+	// true（成功）、false（失敗）
+	bool StartTimeShift();
 
 	//タイムシフト送信を停止する
 	void StopTimeShift();
@@ -68,7 +68,7 @@ protected:
 	wstring filePath;
 	WORD PCR_PID;
 
-	BOOL fileMode;
+	bool fileMode;
 	int seekJitter;
 	LONGLONG currentFilePos;
 

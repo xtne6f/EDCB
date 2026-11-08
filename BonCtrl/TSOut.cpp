@@ -82,11 +82,11 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 
 	if( this->enableDecodeFlag != FALSE || this->emmEnableFlag != FALSE ){
 		//スクランブル解除かEMM処理が設定されている場合だけ実行
-		if( this->decodeUtil.SetNetwork(onid, tsid) == FALSE ){
+		if( this->decodeUtil.SetNetwork(onid, tsid) == false ){
 			AddDebugLog(L"★★Decode DLL load err [CTSOut::OnChChanged()]");
 			//再試行は意味がなさそうなので廃止
 		}
-		this->decodeUtil.SetEmm(this->emmEnableFlag);
+		this->decodeUtil.SetEmm(this->emmEnableFlag != FALSE);
 	}
 	for( const auto& item : this->serviceUtilMap ){
 		item.second->Clear(tsid);
@@ -196,7 +196,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 			if( this->enableDecodeFlag ){
 				//デコード必要
 
-				if( decodeUtil.Decode(&this->decodeBuff.front(), (DWORD)this->decodeBuff.size(), &decodeData, &decodeSize) == FALSE ){
+				if( decodeUtil.Decode(&this->decodeBuff.front(), (DWORD)this->decodeBuff.size(), &decodeData, &decodeSize) == false ){
 					//デコード失敗
 					decodeData = &this->decodeBuff.front();
 					decodeSize = (DWORD)this->decodeBuff.size();
@@ -440,7 +440,7 @@ BOOL CTSOut::SetEmm(
 			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
 				//最初に EMM 処理が設定される場合は DLL を読み込む
 				//スクランブル解除が設定されている場合は読み込み済みなので除外
-				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
+				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == false ){
 					AddDebugLog(L"★★Decode DLL load err [CTSOut::SetEmm()]");
 				}
 			}
@@ -450,7 +450,7 @@ BOOL CTSOut::SetEmm(
 	}
 
 	this->emmEnableFlag = enable;
-	return this->decodeUtil.SetEmm(enable);
+	return this->decodeUtil.SetEmm(enable != FALSE);
 }
 
 //EMM処理を行った数
@@ -821,7 +821,7 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
 				//最初にスクランブル解除が設定される場合は DLL を再読み込みする
 				//EMM 処理が設定されている場合は読み込み済みなので除外
-				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == FALSE ){
+				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == false ){
 					AddDebugLog(L"★★Decode DLL load err [CTSOut::SetScramble()]");
 				}
 			}
