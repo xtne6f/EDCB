@@ -142,7 +142,7 @@ BOOL CWriteMain::Write(
 			//指定サービス
 			BYTE* outData;
 			DWORD outSize;
-			if( this->packetInit.GetTSData(data, size, &outData, &outSize) == FALSE ){
+			if( this->packetInit.GetTSData(data, size, &outData, &outSize) == false ){
 				outSize = 0;
 			}
 			this->outBuff.clear();

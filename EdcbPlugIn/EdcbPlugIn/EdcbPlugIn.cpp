@@ -863,7 +863,7 @@ void CEdcbPlugIn::CtrlCmdCallbackInvoked(const CCmdStream &cmd, CCmdStream &res)
 			lock_recursive_mutex lock(m_streamLock);
 			m_recCtrlMap[m_recCtrlCount] = REC_CTRL();
 			m_recCtrlMap[m_recCtrlCount].sid = 0xFFFF;
-			m_recCtrlMap[m_recCtrlCount].dropCount.SetNoLog(FALSE, this->m_noLogScramble);
+			m_recCtrlMap[m_recCtrlCount].dropCount.SetNoLog(false, this->m_noLogScramble);
 		}
 		break;
 	case CMD2_VIEW_APP_DELETE_CTRL:
