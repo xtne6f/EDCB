@@ -11,23 +11,23 @@ CBonCtrl::CBonCtrl(void)
 	this->viewSpace = -1;
 	this->viewCh = -1;
 
-	this->nwCtrlID = this->tsOut.CreateServiceCtrl(TRUE);
-	this->nwCtrlEnableScramble = TRUE;
-	this->nwCtrlNeedCaption = TRUE;
-	this->nwCtrlNeedData = FALSE;
-	this->nwCtrlAllService = FALSE;
+	this->nwCtrlID = this->tsOut.CreateServiceCtrl(true);
+	this->nwCtrlEnableScramble = true;
+	this->nwCtrlNeedCaption = true;
+	this->nwCtrlNeedData = false;
+	this->nwCtrlAllService = false;
 	this->nwCtrlServiceID = 0xFFFF;
 
 	this->chScanIndexOrStatus = ST_STOP;
 	this->epgCapIndexOrStatus = ST_STOP;
 	this->epgCapBackIndexOrStatus = ST_STOP;
-	this->enableLiveEpgCap = FALSE;
-	this->enableRecEpgCap = FALSE;
+	this->enableLiveEpgCap = false;
+	this->enableRecEpgCap = false;
 
-	this->epgCapBackBSBasic = TRUE;
-	this->epgCapBackCS1Basic = TRUE;
-	this->epgCapBackCS2Basic = TRUE;
-	this->epgCapBackCS3Basic = FALSE;
+	this->epgCapBackBSBasic = true;
+	this->epgCapBackCS1Basic = true;
+	this->epgCapBackCS2Basic = true;
+	this->epgCapBackCS3Basic = false;
 	this->epgCapBackStartWaitSec = 30;
 
 	this->tsOutLogoTypeFlags = 0;
@@ -42,13 +42,13 @@ CBonCtrl::~CBonCtrl(void)
 }
 
 void CBonCtrl::ReloadSetting(
-	BOOL enableEmm,
-	BOOL noLogScramble,
-	BOOL parseEpgPostProcess,
-	BOOL enableScramble,
-	BOOL needCaption,
-	BOOL needData,
-	BOOL allService,
+	bool enableEmm,
+	bool noLogScramble,
+	bool parseEpgPostProcess,
+	bool enableScramble,
+	bool needCaption,
+	bool needData,
+	bool allService,
 	DWORD logoTypeFlags
 	)
 {
@@ -65,6 +65,8 @@ void CBonCtrl::ReloadSetting(
 	this->tsOutLogoTypeFlags = logoTypeFlags;
 }
 
+//ネットワーク送信と統計の対象サービスIDを設定する
+//※GetStreamID()で受動的なチャンネル変化を検出した時などに使う
 void CBonCtrl::SetNWCtrlServiceID(
 	WORD serviceID
 	)
@@ -75,6 +77,8 @@ void CBonCtrl::SetNWCtrlServiceID(
 	}
 }
 
+//EPG取得などの状態を更新する
+//※概ね1秒ごとに呼ぶ
 void CBonCtrl::Check()
 {
 	CheckChScan();
@@ -83,7 +87,12 @@ void CBonCtrl::Check()
 	CheckLogo();
 }
 
-BOOL CBonCtrl::OpenBonDriver(
+//BonDriverをロードしてチャンネル情報などを取得（ファイル名で指定）
+//戻り値：
+// true（成功）、false（失敗）
+//引数：
+// bonDriverFile	[IN]BonDriverのファイル名
+bool CBonCtrl::OpenBonDriver(
 	LPCWSTR bonDriverFile,
 	int traceLevel,
 	int openWait,
@@ -111,19 +120,19 @@ BOOL CBonCtrl::OpenBonDriver(
 		this->tsOut.SetBonDriver(bonFile);
 		this->chUtil.LoadChSet(GetSettingPath().native(), bonFile, this->bonUtil.GetTunerName());
 		this->tsOut.ClearErrCount(this->nwCtrlID);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 //ロード中のBonDriverのファイル名を取得する（ロード成功しているかの判定）
 //※スレッドセーフ
 //戻り値：
-// TRUE（成功）：FALSE（Openに失敗している）
+// true（成功）、false（Openに失敗している）
 //引数：
 // bonDriverFile		[OUT]BonDriverのファイル名(nullptr可)
-BOOL CBonCtrl::GetOpenBonDriver(
+bool CBonCtrl::GetOpenBonDriver(
 	wstring* bonDriverFile
 	)
 {
@@ -133,31 +142,36 @@ BOOL CBonCtrl::GetOpenBonDriver(
 	wstring strBonDriverFile = this->bonUtil.GetOpenBonDriverFileName();
 	if( strBonDriverFile.empty() == false ){
 		*bonDriverFile = strBonDriverFile;
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
-BOOL CBonCtrl::SetCh(
+//チャンネル変更
+//戻り値：
+// true（成功）、false（失敗）
+//引数：
+// chData		[IN]変更チャンネルのサービス情報
+bool CBonCtrl::SetCh(
 	const CH_DATA4& chData
 )
 {
-	if( this->tsOut.IsRec() == TRUE ){
-		return FALSE;
+	if( this->tsOut.IsRec() ){
+		return false;
 	}
 	StopEpgCap();
 
 	if( ProcessSetCh(chData.space, chData.ch, chData.originalNetworkID) ){
 		this->nwCtrlServiceID = chData.serviceID;
 		this->tsOut.SetServiceID(this->nwCtrlID, this->nwCtrlAllService ? 0xFFFF : this->nwCtrlServiceID);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
-BOOL CBonCtrl::ProcessSetCh(
+bool CBonCtrl::ProcessSetCh(
 	DWORD space,
 	DWORD ch,
 	int onidOrChScan
@@ -166,9 +180,9 @@ BOOL CBonCtrl::ProcessSetCh(
 	DWORD spaceNow=0;
 	DWORD chNow=0;
 
-	BOOL ret = FALSE;
+	bool ret = false;
 	if( this->bonUtil.IsOpen() ){
-		ret = TRUE;
+		ret = true;
 		DWORD elapsed;
 		if( this->bonUtil.GetNowCh(&spaceNow, &chNow) == false || space != spaceNow || ch != chNow || this->tsOut.IsChUnknown(&elapsed) && elapsed > 15000 ){
 			StopBackgroundEpgCap();
@@ -186,38 +200,24 @@ BOOL CBonCtrl::ProcessSetCh(
 //チャンネル変更中かどうか
 //※スレッドセーフ
 //戻り値：
-// TRUE（変更中）、FALSE（完了）
-BOOL CBonCtrl::IsChChanging(BOOL* chChgErr)
+// true（変更中）、false（完了）
+bool CBonCtrl::IsChChanging(bool* chChgErr)
 {
 	if( chChgErr != nullptr ){
-		*chChgErr = FALSE;
+		*chChgErr = false;
 	}
 	DWORD elapsed;
 	if( this->tsOut.IsChUnknown(&elapsed) && elapsed != MAXDWORD ){
 		if( elapsed > 15000 ){
 			//タイムアウトした
 			if( chChgErr != nullptr ){
-				*chChgErr = TRUE;
+				*chChgErr = true;
 			}
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 	}
-	return FALSE;
-}
-
-//現在のストリームのIDを取得する
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// ONID		[OUT]originalNetworkID
-// TSID		[OUT]transportStreamID
-BOOL CBonCtrl::GetStreamID(
-	WORD* ONID,
-	WORD* TSID
-	)
-{
-	return this->tsOut.GetStreamID(ONID, TSID);
+	return false;
 }
 
 //ロードしているBonDriverの開放
@@ -307,11 +307,16 @@ void CBonCtrl::AnalyzeThread(CBonCtrl* sys)
 	}
 }
 
+//TSストリーム制御用コントロールを作成する
+//戻り値：
+// 制御識別ID
+//引数：
+// duplicateNWCtrl		[IN]ネットワーク送信と統計用のものと同じ初期値を適用するかどうか
 DWORD CBonCtrl::CreateServiceCtrl(
-	BOOL duplicateNWCtrl
+	bool duplicateNWCtrl
 	)
 {
-	DWORD id = this->tsOut.CreateServiceCtrl(FALSE);
+	DWORD id = this->tsOut.CreateServiceCtrl(false);
 	if( duplicateNWCtrl ){
 		this->tsOut.SetScramble(id, this->nwCtrlEnableScramble);
 		this->tsOut.SetServiceMode(id, this->nwCtrlNeedCaption, this->nwCtrlNeedData);
@@ -320,50 +325,14 @@ DWORD CBonCtrl::CreateServiceCtrl(
 	return id;
 }
 
-//TSストリーム制御用コントロールを削除する
+//ファイル保存を開始する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
-// id			[IN]制御識別ID
-BOOL CBonCtrl::DeleteServiceCtrl(
-	DWORD id
-	)
-{
-	return this->tsOut.DeleteServiceCtrl(id);
-}
-
-//制御対象のサービスを設定する
-BOOL CBonCtrl::SetServiceID(
-	DWORD id,
-	WORD serviceID
-	)
-{
-	return this->tsOut.SetServiceID(id,serviceID);
-}
-
-BOOL CBonCtrl::GetServiceID(
-	DWORD id,
-	WORD* serviceID
-	)
-{
-	return this->tsOut.GetServiceID(id,serviceID);
-}
-
-void CBonCtrl::SendUdp(
-	vector<NW_SEND_INFO>* sendList
-	)
-{
-	this->tsOut.SendUdp(this->nwCtrlID, sendList);
-}
-
-void CBonCtrl::SendTcp(
-	vector<NW_SEND_INFO>* sendList
-	)
-{
-	this->tsOut.SendTcp(this->nwCtrlID, sendList);
-}
-
-BOOL CBonCtrl::StartSave(
+// recParam				[IN]保存パラメータ
+// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+// writeBuffMaxCount	[IN]出力バッファ上限
+bool CBonCtrl::StartSave(
 	const SET_CTRL_REC_PARAM& recParam,
 	const vector<wstring>& saveFolderSub,
 	int writeBuffMaxCount
@@ -371,78 +340,22 @@ BOOL CBonCtrl::StartSave(
 {
 	if( this->tsOut.StartSave(recParam, saveFolderSub, writeBuffMaxCount) ){
 		StartBackgroundEpgCap();
-		return TRUE;
+		return true;
 	}
-	return FALSE;
-}
-
-BOOL CBonCtrl::EndSave(
-	DWORD id,
-	BOOL* subRecFlag
-	)
-{
-	return this->tsOut.EndSave(id, subRecFlag);
-}
-
-//スクランブル解除処理の動作設定
-//戻り値：
-// TRUE（成功）、FALSE（失敗）
-//引数：
-// enable		[IN] TRUE（処理する）、FALSE（処理しない）
-BOOL CBonCtrl::SetScramble(
-	DWORD id,
-	BOOL enable
-	)
-{
-	return this->tsOut.SetScramble(id, enable);
-}
-
-//字幕とデータ放送含めるかどうか
-//引数：
-// id					[IN]制御識別ID
-// enableCaption		[IN]字幕を TRUE（含める）、FALSE（含めない）
-// enableData			[IN]データ放送を TRUE（含める）、FALSE（含めない）
-void CBonCtrl::SetServiceMode(
-	DWORD id,
-	BOOL enableCaption,
-	BOOL enableData
-	)
-{
-	this->tsOut.SetServiceMode(id, enableCaption, enableData);
-}
-
-//エラーカウントをクリアする
-void CBonCtrl::ClearErrCount(
-	DWORD id
-	)
-{
-	this->tsOut.ClearErrCount(id);
-}
-
-//ドロップとスクランブルのカウントを取得する
-//引数：
-// drop				[OUT]ドロップ数
-// scramble			[OUT]スクランブル数
-void CBonCtrl::GetErrCount(
-	DWORD id,
-	ULONGLONG* drop,
-	ULONGLONG* scramble
-	)
-{
-	this->tsOut.GetErrCount(id, drop, scramble);
+	return false;
 }
 
 //チャンネルスキャンを開始する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
-BOOL CBonCtrl::StartChScan()
+// true（成功）、false（失敗）
+bool CBonCtrl::StartChScan()
 {
-	if( this->tsOut.IsRec() == TRUE ){
-		return FALSE;
+	if( this->tsOut.IsRec() ){
+		return false;
 	}
 	if( this->chScanIndexOrStatus >= ST_WORKING ||
 	    this->epgCapIndexOrStatus >= ST_WORKING ){
-		return FALSE;
+		return false;
 	}
 
 	StopBackgroundEpgCap();
@@ -466,13 +379,13 @@ BOOL CBonCtrl::StartChScan()
 		if( this->chScanChkList.empty() ){
 			//スキャンするものがない。ST_COMPLETEに遷移
 			CheckChScan();
-			return TRUE;
+			return true;
 		}
 		//スキャン開始
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 //チャンネルスキャンをキャンセルする
@@ -535,22 +448,22 @@ void CBonCtrl::CheckChScan()
 			this->chScanChChgTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ChChgTimeOut", 9, iniPath.c_str());
 			this->chScanServiceChkTimeOut = GetPrivateProfileInt(L"CHSCAN", L"ServiceChkTimeOut", 8, iniPath.c_str());
 			this->chUtil.Clear();
-			this->chScanChkNext = TRUE;
+			this->chScanChkNext = true;
 		}
 
-		if( this->chScanChkNext == FALSE ){
+		if( this->chScanChkNext == false ){
 			DWORD elapsed;
 			if( this->tsOut.IsChUnknown(&elapsed) ){
 				if( elapsed > this->chScanChChgTimeOut * 1000 ){
 					//チャンネル切り替えにchChgTimeOut秒以上かかってるので無信号と判断
 					AddDebugLog(L"★AutoScan Ch Change timeout");
-					this->chScanChkNext = TRUE;
+					this->chScanChkNext = true;
 				}
 			}else{
 				if( GetU32Tick() - this->chScanTick > (this->chScanChChgTimeOut + this->chScanServiceChkTimeOut) * 1000 ){
 					//チャンネル切り替え成功したけどサービス一覧とれないので無信号と判断
 					AddDebugLog(L"★AutoScan GetService timeout");
-					this->chScanChkNext = TRUE;
+					this->chScanChkNext = true;
 				}else{
 					//サービス一覧の取得を行う
 					this->tsOut.GetServiceListActual([=](DWORD serviceListSize, SERVICE_INFO* serviceList) {
@@ -574,7 +487,7 @@ void CBonCtrl::CheckChScan()
 								}
 								currSID = nextSID;
 							}
-							this->chScanChkNext = TRUE;
+							this->chScanChkNext = true;
 						}
 					});
 				}
@@ -593,7 +506,7 @@ void CBonCtrl::CheckChScan()
 			this->chScanIndexOrStatus = chkCount;
 			if( this->ProcessSetCh(this->chScanChkList[chkCount].space, this->chScanChkList[chkCount].ch, -1) ){
 				this->chScanTick = GetU32Tick();
-				this->chScanChkNext = FALSE;
+				this->chScanChkNext = false;
 			}
 		}
 	}
@@ -601,19 +514,19 @@ void CBonCtrl::CheckChScan()
 
 //EPG取得を開始する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
 // chList		[IN]EPG取得するチャンネル一覧(nullptr可)
-BOOL CBonCtrl::StartEpgCap(
+bool CBonCtrl::StartEpgCap(
 	const vector<SET_CH_INFO>* chList
 	)
 {
-	if( this->tsOut.IsRec() == TRUE ){
-		return FALSE;
+	if( this->tsOut.IsRec() ){
+		return false;
 	}
 	if( this->chScanIndexOrStatus >= ST_WORKING ||
 	    this->epgCapIndexOrStatus >= ST_WORKING ){
-		return FALSE;
+		return false;
 	}
 
 	StopBackgroundEpgCap();
@@ -633,14 +546,14 @@ BOOL CBonCtrl::StartEpgCap(
 		if( this->epgCapChList.empty() ){
 			//取得するものがない
 			this->epgCapIndexOrStatus = ST_COMPLETE;
-			return TRUE;
+			return true;
 		}
 		//取得開始
 		this->epgCapIndexOrStatus = ST_WORKING;
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 //EPG取得を停止する
@@ -648,7 +561,7 @@ void CBonCtrl::StopEpgCap(
 	)
 {
 	if( this->epgCapIndexOrStatus >= ST_WORKING ){
-		this->tsOut.StopSaveEPG(FALSE);
+		this->tsOut.StopSaveEPG(false);
 		this->epgCapIndexOrStatus = ST_CANCEL;
 	}
 }
@@ -690,20 +603,20 @@ void CBonCtrl::CheckEpgCap()
 			this->epgCapCS1Basic = GetPrivateProfileInt(L"SET", L"CS1BasicOnly", 1, commonIniPath.c_str()) != 0;
 			this->epgCapCS2Basic = GetPrivateProfileInt(L"SET", L"CS2BasicOnly", 1, commonIniPath.c_str()) != 0;
 			this->epgCapCS3Basic = GetPrivateProfileInt(L"SET", L"CS3BasicOnly", 0, commonIniPath.c_str()) != 0;
-			this->epgCapChkBS = FALSE;
-			this->epgCapChkCS1 = FALSE;
-			this->epgCapChkCS2 = FALSE;
-			this->epgCapChkCS3 = FALSE;
-			this->epgCapChkNext = TRUE;
+			this->epgCapChkBS = false;
+			this->epgCapChkCS1 = false;
+			this->epgCapChkCS2 = false;
+			this->epgCapChkCS3 = false;
+			this->epgCapChkNext = true;
 		}
 
-		if( this->epgCapChkNext == FALSE ){
+		if( this->epgCapChkNext == false ){
 			DWORD elapsed;
 			if( this->tsOut.IsChUnknown(&elapsed) ){
 				if( this->epgCapSetChState != 0 || elapsed > 15000 ){
 					//チャンネル切り替えがタイムアウトしたので無信号と判断
-					this->tsOut.StopSaveEPG(FALSE);
-					this->epgCapChkNext = TRUE;
+					this->tsOut.StopSaveEPG(false);
+					this->epgCapChkNext = true;
 				}
 			}else{
 				DWORD tick = GetU32Tick();
@@ -715,11 +628,11 @@ void CBonCtrl::CheckEpgCap()
 				if( tick - this->epgCapTick > this->epgCapTimeOut * 60 * 1000 ){
 					//timeOut分以上かかっているなら停止
 					this->tsOut.StopSaveEPG(this->epgCapSaveTimeOut);
-					this->epgCapChkNext = TRUE;
+					this->epgCapChkNext = true;
 					AddDebugLogFormat(L"++%d分でEPG取得完了せず or Ch変更でエラー", this->epgCapTimeOut);
 				}else if( tick - this->epgCapTick > 5000 ){
 					SET_CH_INFO ch = this->epgCapChList[chkCount];
-					BOOL basicOnly = ch.ONID == 4 && this->epgCapBSBasic ||
+					bool basicOnly = ch.ONID == 4 && this->epgCapBSBasic ||
 					                 ch.ONID == 6 && this->epgCapCS1Basic ||
 					                 ch.ONID == 7 && this->epgCapCS2Basic ||
 					                 ch.ONID == 10 && this->epgCapCS3Basic;
@@ -732,16 +645,16 @@ void CBonCtrl::CheckEpgCap()
 							this->epgCapSetChState = 2;
 							this->epgCapLastChkTick = tick;
 							if( ch.ONID == 4 ){
-								this->epgCapChkBS = TRUE;
+								this->epgCapChkBS = true;
 							}else if( ch.ONID == 6 ){
-								this->epgCapChkCS1 = TRUE;
+								this->epgCapChkCS1 = true;
 							}else if( ch.ONID == 7 ){
-								this->epgCapChkCS2 = TRUE;
+								this->epgCapChkCS2 = true;
 							}else if( ch.ONID == 10 ){
-								this->epgCapChkCS3 = TRUE;
+								this->epgCapChkCS3 = true;
 							}
 						}else{
-							this->epgCapChkNext = TRUE;
+							this->epgCapChkNext = true;
 						}
 					}else if( tick - this->epgCapLastChkTick > (DWORD)(this->epgCapSetChState == 2 ? 60 : 10) * 1000 ){
 						//最低60秒は取得し、以後10秒ごとにチェック
@@ -755,29 +668,29 @@ void CBonCtrl::CheckEpgCap()
 						}
 						//蓄積状態チェック
 						for( vector<SET_CH_INFO>::iterator itr = chkList.begin(); itr != chkList.end(); itr++ ){
-							BOOL leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
+							bool leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
 							pair<EPG_SECTION_STATUS, bool> status = this->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
 							if( status.second == false ){
 								status.first = this->tsOut.GetSectionStatus(leitFlag);
 							}
 							if( status.first != EpgNoData ){
-								this->epgCapChkNext = TRUE;
+								this->epgCapChkNext = true;
 								if( status.first != EpgHEITAll &&
 								    status.first != EpgLEITAll &&
-								    (status.first != EpgBasicAll || basicOnly == FALSE) ){
-									this->epgCapChkNext = FALSE;
+								    (status.first != EpgBasicAll || basicOnly == false) ){
+									this->epgCapChkNext = false;
 									break;
 								}
 							}
 						}
 						WORD onid;
 						WORD tsid;
-						if( this->tsOut.GetStreamID(&onid, &tsid) == FALSE || onid != ch.ONID || tsid != ch.TSID ){
+						if( this->tsOut.GetStreamID(&onid, &tsid) == false || onid != ch.ONID || tsid != ch.TSID ){
 							//チャンネルが変化したので停止
-							this->tsOut.StopSaveEPG(FALSE);
-							this->epgCapChkNext = TRUE;
+							this->tsOut.StopSaveEPG(false);
+							this->epgCapChkNext = true;
 						}else if( this->epgCapChkNext ){
-							this->tsOut.StopSaveEPG(TRUE);
+							this->tsOut.StopSaveEPG(true);
 						}
 					}
 				}
@@ -808,7 +721,7 @@ void CBonCtrl::CheckEpgCap()
 			                       this->epgCapChList[chkCount].SID, space, ch) &&
 			    this->ProcessSetCh(space, ch, this->epgCapChList[chkCount].ONID) ){
 				this->epgCapSetChState = 0;
-				this->epgCapChkNext = FALSE;
+				this->epgCapChkNext = false;
 			}
 		}
 	}
@@ -820,45 +733,19 @@ void CBonCtrl::GetEpgDataFilePath(WORD ONID, WORD TSID, wstring& epgDataFilePath
 	epgDataFilePath = GetSettingPath().append(EPG_SAVE_FOLDER).append(epgDataFilePath).native();
 }
 
-void CBonCtrl::SaveErrCount(
-	DWORD id,
-	const wstring& filePath,
-	BOOL asUtf8,
-	int dropSaveThresh,
-	int scrambleSaveThresh,
-	ULONGLONG& drop,
-	ULONGLONG& scramble
-	)
-{
-	this->tsOut.SaveErrCount(id, filePath, asUtf8, dropSaveThresh, scrambleSaveThresh, drop, scramble);
-}
-
-//録画中のファイルの出力サイズを取得する
-//引数：
-// id					[IN]制御識別ID
-// writeSize			[OUT]保存ファイル名
-void CBonCtrl::GetRecWriteSize(
-	DWORD id,
-	LONGLONG* writeSize
-	)
-{
-	this->tsOut.GetRecWriteSize(id, writeSize);
-}
-
 //バックグラウンドでのEPG取得設定
 //引数：
 // enableLive	[IN]視聴中に取得する
 // enableRec	[IN]録画中に取得する
-// enableRec	[IN]EPG取得するチャンネル一覧
 // *Basic		[IN]１チャンネルから基本情報のみ取得するかどうか
 // backStartWaitSec	[IN]Ch切り替え、録画開始後、バックグラウンドでのEPG取得を開始するまでの秒数
 void CBonCtrl::SetBackGroundEpgCap(
-	BOOL enableLive,
-	BOOL enableRec,
-	BOOL BSBasic,
-	BOOL CS1Basic,
-	BOOL CS2Basic,
-	BOOL CS3Basic,
+	bool enableLive,
+	bool enableRec,
+	bool BSBasic,
+	bool CS1Basic,
+	bool CS2Basic,
+	bool CS3Basic,
 	DWORD backStartWaitSec
 	)
 {
@@ -890,7 +777,7 @@ void CBonCtrl::StartBackgroundEpgCap()
 void CBonCtrl::StopBackgroundEpgCap()
 {
 	if( this->epgCapBackIndexOrStatus >= 0 ){
-		this->tsOut.StopSaveEPG(FALSE);
+		this->tsOut.StopSaveEPG(false);
 	}
 	this->epgCapBackIndexOrStatus = ST_STOP;
 }
@@ -904,7 +791,7 @@ void CBonCtrl::CheckEpgCapBack()
 			WORD onid;
 			WORD tsid;
 			if( (this->tsOut.IsRec() ? this->enableRecEpgCap : this->enableLiveEpgCap) && this->tsOut.GetStreamID(&onid, &tsid) ){
-				BOOL basicOnly = onid == 4 && this->epgCapBackBSBasic ||
+				bool basicOnly = onid == 4 && this->epgCapBackBSBasic ||
 				                 onid == 6 && this->epgCapBackCS1Basic ||
 				                 onid == 7 && this->epgCapBackCS2Basic ||
 				                 onid == 10 && this->epgCapBackCS3Basic;
@@ -940,24 +827,24 @@ void CBonCtrl::CheckEpgCapBack()
 	if( tick - this->epgCapLastChkTick > (DWORD)(this->epgCapSetChState == 2 ? 60 : 10) * 1000 ){
 		this->epgCapSetChState = 3;
 		this->epgCapLastChkTick = tick;
-		BOOL basicOnly = this->epgCapChList[0].ONID == 4 && this->epgCapBackBSBasic ||
+		bool basicOnly = this->epgCapChList[0].ONID == 4 && this->epgCapBackBSBasic ||
 		                 this->epgCapChList[0].ONID == 6 && this->epgCapBackCS1Basic ||
 		                 this->epgCapChList[0].ONID == 7 && this->epgCapBackCS2Basic ||
 		                 this->epgCapChList[0].ONID == 10 && this->epgCapBackCS3Basic;
 		//蓄積状態チェック
-		BOOL chkNext = FALSE;
+		bool chkNext = false;
 		for( vector<SET_CH_INFO>::const_iterator itr = this->epgCapChList.begin(); itr != this->epgCapChList.end(); itr++ ){
-			BOOL leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
+			bool leitFlag = this->chUtil.IsPartial(itr->ONID, itr->TSID, itr->SID);
 			pair<EPG_SECTION_STATUS, bool> status = this->tsOut.GetSectionStatusService(itr->ONID, itr->TSID, itr->SID, leitFlag);
 			if( status.second == false ){
 				status.first = this->tsOut.GetSectionStatus(leitFlag);
 			}
 			if( status.first != EpgNoData ){
-				chkNext = TRUE;
+				chkNext = true;
 				if( status.first != EpgHEITAll &&
 				    status.first != EpgLEITAll &&
-				    (status.first != EpgBasicAll || basicOnly == FALSE) ){
-					chkNext = FALSE;
+				    (status.first != EpgBasicAll || basicOnly == false) ){
+					chkNext = false;
 					break;
 				}
 			}
@@ -965,14 +852,14 @@ void CBonCtrl::CheckEpgCapBack()
 
 		WORD onid;
 		WORD tsid;
-		if( this->tsOut.GetStreamID(&onid, &tsid) == FALSE ||
+		if( this->tsOut.GetStreamID(&onid, &tsid) == false ||
 		    onid != this->epgCapChList[this->epgCapBackIndexOrStatus].ONID ||
 		    tsid != this->epgCapChList[this->epgCapBackIndexOrStatus].TSID ){
 			//チャンネルが変化したので停止
-			this->tsOut.StopSaveEPG(FALSE);
+			this->tsOut.StopSaveEPG(false);
 			this->epgCapBackIndexOrStatus = ST_STOP;
 		}else if( chkNext ){
-			this->tsOut.StopSaveEPG(TRUE);
+			this->tsOut.StopSaveEPG(true);
 			CSendCtrlCmd cmd;
 			cmd.SetConnectTimeOut(1000);
 			cmd.SendReloadEpg();
@@ -1038,6 +925,13 @@ void CBonCtrl::CheckLogo()
 	}
 }
 
+//現在のストリームの表示用のステータスを取得する
+//引数：
+// signalLv		[OUT]シグナルレベル
+// space		[OUT]物理CHのspace(不明のとき負)
+// ch			[OUT]物理CHのch(不明のとき負)
+// drop			[OUT]ドロップ数
+// scramble		[OUT]スクランブル数
 void CBonCtrl::GetViewStatusInfo(
 	float* signalLv,
 	int* space,
