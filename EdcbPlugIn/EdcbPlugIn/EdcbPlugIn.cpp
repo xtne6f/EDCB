@@ -351,10 +351,14 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		SendMessage(hwnd, WM_EPGCAP_STOP, 0, 0);
 		m_pApp->SetStreamCallback(TVTest::STREAM_CALLBACK_REMOVE, StreamCallback);
 		if (m_epgReloadThread.joinable()) {
-			if (WaitForSingleObject(m_epgReloadThread.native_handle(), 5000) == WAIT_TIMEOUT) {
-				TerminateThread(m_epgReloadThread.native_handle(), 0xFFFFFFFF);
+			if (m_epgReloadEvent->WaitOne(5000)) {
+				m_epgReloadThread.join();
 			}
-			m_epgReloadThread.join();
+			else {
+				m_pApp->AddLog(L"EpgReloadThreadを回収できませんでした。", TVTest::LOG_TYPE_WARNING);
+				m_epgReloadThread.detach();
+				m_epgReloadEvent.release();
+			}
 		}
 		m_hwnd = nullptr;
 		return 0;
@@ -580,11 +584,12 @@ LRESULT CEdcbPlugIn::WndProc_(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					}
 					DeleteFile((m_epgFilePath + L".tmp").c_str());
 					if (saveEpgFile) {
-						if (m_epgReloadThread.joinable() && WaitForSingleObject(m_epgReloadThread.native_handle(), 0) != WAIT_TIMEOUT) {
+						if (m_epgReloadThread.joinable() && m_epgReloadEvent->WaitOne(0)) {
 							m_epgReloadThread.join();
 						}
 						if (!m_epgReloadThread.joinable()) {
-							m_epgReloadThread = thread_(ReloadEpgThread);
+							m_epgReloadEvent.reset(new CAutoResetEvent());
+							m_epgReloadThread = std::thread(ReloadEpgThread, m_epgReloadEvent.get());
 						}
 					}
 				}
@@ -1103,11 +1108,12 @@ bool CEdcbPlugIn:: IsTunerBonDriver() const
 		[](wchar_t a, wchar_t b) { return towupper(a) == towupper(b); }) == m_nonTunerDrivers.end();
 }
 
-void CEdcbPlugIn::ReloadEpgThread()
+void CEdcbPlugIn::ReloadEpgThread(CAutoResetEvent *reloadEvent)
 {
 	CSendCtrlCmd cmd;
 	cmd.SetConnectTimeOut(4000);
 	cmd.SendReloadEpg();
+	reloadEvent->Set();
 }
 
 BOOL CALLBACK CEdcbPlugIn::StreamCallback(BYTE *pData, void *pClientData)

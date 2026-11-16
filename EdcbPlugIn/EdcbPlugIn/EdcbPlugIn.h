@@ -74,14 +74,14 @@ private:
 	// 現在のBonDriverはチューナかどうか調べる
 	bool IsTunerBonDriver() const;
 	// EpgTimerSrvにEPG再読み込みを要求するスレッド
-	static void ReloadEpgThread();
+	static void ReloadEpgThread(CAutoResetEvent *reloadEvent);
 	// ストリームコールバック(別スレッド)
 	static BOOL CALLBACK StreamCallback(BYTE *pData, void *pClientData);
 	bool EnumLogoListProc(DWORD logoListSize, const LOGO_INFO *logoList);
 
 	CMyEventHandler m_handler;
-	recursive_mutex_ m_streamLock;
-	recursive_mutex_ m_statusLock;
+	std::recursive_mutex m_streamLock;
+	std::recursive_mutex m_statusLock;
 	VIEW_APP_STATUS_INFO m_statusInfo;
 	HWND m_hwnd;
 	CPipeServer m_pipeServer;
@@ -103,7 +103,8 @@ private:
 	enum { EPG_FILE_ST_NONE, EPG_FILE_ST_PAT, EPG_FILE_ST_TOT, EPG_FILE_ST_ALL } m_epgFileState;
 	LONGLONG m_epgFileTotPos;
 	wstring m_epgFilePath;
-	thread_ m_epgReloadThread;
+	std::thread m_epgReloadThread;
+	std::unique_ptr<CAutoResetEvent> m_epgReloadEvent;
 	DWORD m_epgCapTimeout;
 	bool m_epgCapSaveTimeout;
 	vector<SET_CH_INFO> m_epgCapChList;
