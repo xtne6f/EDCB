@@ -73,10 +73,10 @@ protected:
 	vector<BYTE> writeBuff;
 	DWORD writeBuffSize;
 	LONGLONG wrotePos;
-	recursive_mutex_ wroteLock;
+	std::recursive_mutex wroteLock;
 
 	std::unique_ptr<FILE, fclose_deleter> teeFile;
-	thread_ teeThread;
+	std::thread teeThread;
 	CAutoResetEvent teeThreadStopEvent;
 	wstring teeCmd;
 	vector<BYTE> teeBuff;

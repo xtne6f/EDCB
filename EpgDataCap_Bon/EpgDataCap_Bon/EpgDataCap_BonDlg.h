@@ -74,7 +74,7 @@ protected:
 	const CCmdStream* cmdCapture;
 	CCmdStream* resCapture;
 
-	recursive_mutex_ statusInfoLock;
+	std::recursive_mutex statusInfoLock;
 	VIEW_APP_STATUS_INFO statusInfo;
 
 	//サービス一覧の表示と同期する。ただしこのリストには非表示サービスも含む

@@ -24,7 +24,7 @@ private:
 	CStreamCtrlDlg ctrlDlg;
 	CCmdStream cmdCapture;
 	CCmdStream resCapture;
-	recursive_mutex_ cmdLock;
+	std::recursive_mutex cmdLock;
 
 private:
 	static LRESULT CALLBACK EventCallback(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData);

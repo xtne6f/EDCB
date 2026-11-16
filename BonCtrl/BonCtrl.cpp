@@ -115,7 +115,7 @@ bool CBonCtrl::OpenBonDriver(
 		wstring bonFile = this->bonUtil.GetOpenBonDriverFileName();
 		//解析スレッド起動
 		this->analyzeStopFlag = false;
-		this->analyzeThread = thread_(AnalyzeThread, this);
+		this->analyzeThread = std::thread(AnalyzeThread, this);
 
 		this->tsOut.SetBonDriver(bonFile);
 		this->chUtil.LoadChSet(GetSettingPath().native(), bonFile, this->bonUtil.GetTunerName());

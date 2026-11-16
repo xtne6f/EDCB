@@ -345,8 +345,8 @@ public:
 		);
 protected:
 	//objLock->epgUtilLockの順にロックする
-	recursive_mutex_ objLock;
-	recursive_mutex_ epgUtilLock;
+	std::recursive_mutex objLock;
+	std::recursive_mutex epgUtilLock;
 
 	CEpgDataCap3Util epgUtil;
 	CScrambleDecoderUtil decodeUtil;

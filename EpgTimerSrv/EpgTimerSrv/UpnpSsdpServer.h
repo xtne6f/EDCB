@@ -28,8 +28,8 @@ public:
 	void Stop();
 private:
 	static void SsdpThread(CUpnpSsdpServer* sys);
-	thread_ ssdpThread;
-	atomic_bool_ stopFlag;
+	std::thread ssdpThread;
+	std::atomic_bool stopFlag;
 	vector<SSDP_TARGET_INFO> targetList;
 	int ssdpIfTypes;
 	int initialWaitSec;

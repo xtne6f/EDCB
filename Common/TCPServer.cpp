@@ -89,7 +89,7 @@ bool CTCPServer::StartServer(unsigned short port, bool ipv6, DWORD dwResponseTim
 			if( bind(m_sock, result->ai_addr, (int)result->ai_addrlen) == 0 && listen(m_sock, SOMAXCONN) == 0 ){
 				m_stopFlag = false;
 				m_notifyEvent.Reset();
-				m_thread = thread_(ServerThread, this);
+				m_thread = std::thread(ServerThread, this);
 				freeaddrinfo(result);
 				return true;
 			}
@@ -439,7 +439,7 @@ void CTCPServer::ServerThread(CTCPServer* pSys)
 						std::swap(info.cmd, cmd);
 						info.sys = pSys;
 						info.completed = false;
-						info.th = thread_(ResponseThread, &info);
+						info.th = std::thread(ResponseThread, &info);
 						sock = INVALID_SOCKET;
 						break;
 					}

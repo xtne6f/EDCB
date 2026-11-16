@@ -69,12 +69,12 @@ protected:
 	static void OutThread(CWriteTSFile* sys);
 
 protected:
-	recursive_mutex_ outThreadLock;
+	std::recursive_mutex outThreadLock;
 	std::list<vector<BYTE>> tsBuffList;
 	std::list<vector<BYTE>> tsFreeList;
 
-	thread_ outThread;
-	atomic_int_ outStopState;
+	std::thread outThread;
+	std::atomic_int outStopState;
 	CAutoResetEvent outStopEvent;
 
 	struct SAVE_INFO {

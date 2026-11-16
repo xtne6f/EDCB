@@ -28,9 +28,9 @@ public:
 
 protected:
 	std::function<void(CCmdStream&, CCmdStream&)> cmdProc;
-	atomic_bool_ exitingFlag;
+	std::atomic_bool exitingFlag;
 	CAutoResetEvent stopEvent;
-	thread_ workThread;
+	std::thread workThread;
 #ifdef _WIN32
 	//要素1は勧告ロックを求めないパイプ用。約束事が異なるだけで実装は完全に対称
 	HANDLE hEventOls[2];

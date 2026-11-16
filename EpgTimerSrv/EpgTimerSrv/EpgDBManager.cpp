@@ -39,7 +39,7 @@ void CEpgDBManager::ReloadEpgData(bool foreground)
 	if( this->loadForeground == false ){
 		this->loadForeground = foreground;
 	}
-	this->loadThread = thread_(LoadThread, this);
+	this->loadThread = std::thread(LoadThread, this);
 }
 
 namespace

@@ -107,7 +107,7 @@ void CBatManager::StartWork()
 		}else{
 			this->batWorkStopFlag = false;
 			this->batWorkExitingFlag = false;
-			this->batWorkThread = thread_(BatWorkThread, this);
+			this->batWorkThread = std::thread(BatWorkThread, this);
 		}
 	}
 }

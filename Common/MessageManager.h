@@ -70,13 +70,13 @@ private:
 		DWORD tick;
 	};
 
-	atomic_bool_ m_initialized;
-	atomic_bool_ m_sending;
-	atomic_bool_ m_destroy;
-	atomic_bool_ m_handleSignal;
-	thread_::id m_tid;
-	recursive_mutex_ m_sendLock;
-	recursive_mutex_ m_queueLock;
+	std::atomic_bool m_initialized;
+	std::atomic_bool m_sending;
+	std::atomic_bool m_destroy;
+	std::atomic_bool m_handleSignal;
+	std::thread::id m_tid;
+	std::recursive_mutex m_sendLock;
+	std::recursive_mutex m_queueLock;
 	std::queue<POST> m_postQueue;
 	std::unordered_set<int> m_postByTimerSet;
 	vector<TIMER> m_timerList;

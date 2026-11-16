@@ -23,7 +23,7 @@
 namespace
 {
 FILE* g_debugLog;
-recursive_mutex_ g_debugLogLock;
+std::recursive_mutex g_debugLogLock;
 }
 
 #ifdef _WIN32

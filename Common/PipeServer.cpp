@@ -95,7 +95,7 @@ bool CPipeServer::StartServer(
 					if( i == (doNotCreateNoWaitPipe ? 0 : 1) ){
 						this->exitingFlag = false;
 						this->stopEvent.Reset();
-						this->workThread = thread_(ServerThread, this);
+						this->workThread = std::thread(ServerThread, this);
 						return true;
 					}
 					continue;
@@ -118,7 +118,7 @@ bool CPipeServer::StartServer(
 			    listen(this->srvSock, SOMAXCONN) == 0 ){
 				this->exitingFlag = false;
 				this->stopEvent.Reset();
-				this->workThread = thread_(ServerThread, this);
+				this->workThread = std::thread(ServerThread, this);
 				return true;
 			}
 		}

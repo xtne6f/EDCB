@@ -71,7 +71,7 @@ bool CWriteTSFile::StartSave(
 		//受信スレッド起動
 		this->outStopState = 2;
 		this->outStopEvent.Reset();
-		this->outThread = thread_(OutThread, this);
+		this->outThread = std::thread(OutThread, this);
 		//保存開始まで待つ
 		this->outStopEvent.WaitOne();
 		//停止状態(1)でなければ開始状態(0)に移す

@@ -43,16 +43,16 @@ protected:
 	wstring m_acl;
 
 	CAutoResetEvent m_notifyEvent;
-	atomic_bool_ m_stopFlag;
-	thread_ m_thread;
+	std::atomic_bool m_stopFlag;
+	std::thread m_thread;
 #ifdef _WIN32
 	WSAEVENT m_hAcceptEvent;
 #endif
 	SOCKET m_sock;
 
 	struct RESPONSE_THREAD_INFO {
-		thread_ th;
-		atomic_bool_ completed;
+		std::thread th;
+		std::atomic_bool completed;
 		SOCKET sock;
 		CCmdStream cmd;
 		CTCPServer* sys;

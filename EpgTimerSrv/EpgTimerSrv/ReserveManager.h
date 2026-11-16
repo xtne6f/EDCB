@@ -167,7 +167,7 @@ private:
 	//バッチに渡す録画済み情報マクロを追加する
 	static void AddRecInfoMacro(vector<pair<string, wstring>>& macroList, const REC_FILE_INFO_BASIC& recInfo);
 
-	mutable recursive_mutex_ managerLock;
+	mutable std::recursive_mutex managerLock;
 
 	CNotifyManager& notifyManager;
 	CEpgDBManager& epgDBManager;
@@ -200,5 +200,5 @@ private:
 	mutable LONGLONG recInfo2SearchStartTime;
 
 	CAutoResetEvent watchdogStopEvent;
-	thread_ watchdogThread;
+	std::thread watchdogThread;
 };

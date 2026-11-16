@@ -58,8 +58,8 @@ public:
 
 protected:
 	CAutoResetEvent m_stopSendEvent;
-	thread_ m_sendThread;
-	recursive_mutex_ m_sendLock;
+	std::thread m_sendThread;
+	std::recursive_mutex m_sendLock;
 #ifdef _WIN32
 	int m_wsaStartupResult;
 #endif

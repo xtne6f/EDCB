@@ -84,7 +84,7 @@ private:
 	static void WatchdogThread(CBonDriverUtil* sys);
 
 	static class CInit { public: CInit(); } s_init;
-	recursive_mutex_ utilLock;
+	std::recursive_mutex utilLock;
 	wstring loadDllFolder;
 	wstring loadDllFileName;
 	wstring loadTunerName;
@@ -94,8 +94,8 @@ private:
 	std::function<void(float, int, int)> statusFunc;
 	int statusTimeout;
 	IBonDriver2* bon2IF;
-	thread_ driverThread;
-	thread_ watchdogThread;
+	std::thread driverThread;
+	std::thread watchdogThread;
 	CAutoResetEvent driverOpenEvent;
 	CAutoResetEvent watchdogStopEvent;
 	int traceLevel;

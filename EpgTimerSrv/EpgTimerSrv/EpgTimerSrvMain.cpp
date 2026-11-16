@@ -348,7 +348,7 @@ bool CEpgTimerSrvMain::OnMessage(CMessageManager::PARAMS& pa)
 		ctx->sys->notifyManager.SetNotifyCallback([ctx]() { ctx->sys->msgManager.Post(ID_APP_RECEIVE_NOTIFY, false); });
 #ifndef _WIN32
 		ctx->sys->processLuaPostStopEvent.Reset();
-		ctx->sys->processLuaPostThread = thread_(ProcessLuaPost, ctx->sys);
+		ctx->sys->processLuaPostThread = std::thread(ProcessLuaPost, ctx->sys);
 #endif
 		AddDebugLog(L"*** Server initialized ***");
 		return true;
@@ -887,7 +887,7 @@ LRESULT CALLBACK CEpgTimerSrvMain::MainWndProc(HWND hwnd, UINT uMsg, WPARAM wPar
 					}
 					ctx->sys->doLuaScriptQueue.push_back(std::move(script));
 					if( ctx->sys->doLuaWorkerThread.joinable() == false ){
-						ctx->sys->doLuaWorkerThread = thread_(DoLuaWorker, ctx->sys);
+						ctx->sys->doLuaWorkerThread = std::thread(DoLuaWorker, ctx->sys);
 					}
 					return TRUE;
 				}

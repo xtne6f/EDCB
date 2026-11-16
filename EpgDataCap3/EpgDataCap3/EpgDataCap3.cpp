@@ -16,7 +16,7 @@
 namespace
 {
 CInstanceManager<CEpgDataCap3Main> g_instMng;
-recursive_mutex_ g_debugLogLock;
+std::recursive_mutex g_debugLogLock;
 void (CALLBACK *g_debugLogProc)(const WCHAR* s);
 int g_debugLogProcCount;
 }

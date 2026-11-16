@@ -102,7 +102,7 @@ BOOL CWriteMain::Start(
 		this->teeFile.reset(UtilOpenFile(this->savePath, UTIL_SHARED_READ | UTIL_F_SEQUENTIAL | UTIL_F_IONBF));
 		if( this->teeFile ){
 			this->teeThreadStopEvent.Reset();
-			this->teeThread = thread_(TeeThread, this);
+			this->teeThread = std::thread(TeeThread, this);
 		}
 	}
 

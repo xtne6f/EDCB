@@ -128,7 +128,7 @@ bool CTimeShiftUtil::StartTimeShift()
 		if( this->readThread.joinable() == false ){
 			//受信スレッド起動
 			this->readStopFlag = false;
-			this->readThread = thread_(ReadThread, this);
+			this->readThread = std::thread(ReadThread, this);
 		}
 	}
 

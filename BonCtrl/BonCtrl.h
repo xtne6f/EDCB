@@ -422,7 +422,7 @@ protected:
 	CTSOut tsOut;
 	CChSetUtil chUtil;
 
-	recursive_mutex_ buffLock;
+	std::recursive_mutex buffLock;
 	std::list<vector<BYTE>> tsBuffList;
 	std::list<vector<BYTE>> tsFreeList;
 	float statusSignalLv;
@@ -436,9 +436,9 @@ protected:
 	bool nwCtrlAllService;
 	WORD nwCtrlServiceID;
 
-	thread_ analyzeThread;
+	std::thread analyzeThread;
 	CAutoResetEvent analyzeEvent;
-	atomic_bool_ analyzeStopFlag;
+	std::atomic_bool analyzeStopFlag;
 
 	//チャンネルスキャン用
 	struct CHK_CH_INFO {
@@ -457,7 +457,7 @@ protected:
 	//EPG取得用
 	//取得中はconst操作のみ
 	vector<SET_CH_INFO> epgCapChList;
-	atomic_int_ epgCapIndexOrStatus;
+	std::atomic_int epgCapIndexOrStatus;
 	bool epgCapBSBasic;
 	bool epgCapCS1Basic;
 	bool epgCapCS2Basic;
