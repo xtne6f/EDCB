@@ -14,22 +14,23 @@ CTSOut::CTSOut(void)
 
 	this->epgUtil.Initialize();
 
-	this->enableDecodeFlag = FALSE;
-	this->emmEnableFlag = FALSE;
+	this->enableDecodeFlag = false;
+	this->emmEnableFlag = false;
 
 	this->nextCtrlID = 1;
 	this->logoAdditionalNeededPids = nullptr;
-	this->noLogScramble = FALSE;
-	this->parseEpgPostProcess = FALSE;
+	this->noLogScramble = false;
+	this->parseEpgPostProcess = false;
 }
 
 
 CTSOut::~CTSOut(void)
 {
-	StopSaveEPG(FALSE);
+	StopSaveEPG(false);
 }
 
-void CTSOut::SetChChangeEvent(WORD presumedONID, BOOL resetEpgUtil)
+//チャンネル変更状態に遷移する
+void CTSOut::SetChChangeEvent(WORD presumedONID, bool resetEpgUtil)
 {
 	lock_recursive_mutex lock(this->objLock);
 
@@ -39,7 +40,7 @@ void CTSOut::SetChChangeEvent(WORD presumedONID, BOOL resetEpgUtil)
 
 	this->decodeUtil.UnLoadDll();
 
-	if( resetEpgUtil == TRUE ){
+	if( resetEpgUtil ){
 		lock_recursive_mutex lock2(this->epgUtilLock);
 		//EpgDataCap3は内部メソッド単位でアトミック。初期化以外はobjLockかepgUtilLockのどちらかを獲得すればよい
 		this->epgUtil.UnInitialize();
@@ -48,7 +49,8 @@ void CTSOut::SetChChangeEvent(WORD presumedONID, BOOL resetEpgUtil)
 	}
 }
 
-BOOL CTSOut::IsChUnknown(DWORD* elapsedTime)
+//GetStreamID()が失敗する状態かどうか
+bool CTSOut::IsChUnknown(DWORD* elapsedTime)
 {
 	lock_recursive_mutex lock(this->objLock);
 
@@ -56,21 +58,27 @@ BOOL CTSOut::IsChUnknown(DWORD* elapsedTime)
 		if( elapsedTime != nullptr ){
 			*elapsedTime = this->chChangeState == CH_ST_INIT ? MAXDWORD : GetU32Tick() - this->chChangeTime;
 		}
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
-BOOL CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
+//現在のストリームのIDを取得する
+//戻り値：
+// true（成功）、false（失敗）
+//引数：
+// ONID		[OUT]originalNetworkID
+// TSID		[OUT]transportStreamID
+bool CTSOut::GetStreamID(WORD* ONID, WORD* TSID)
 {
 	lock_recursive_mutex lock(this->objLock);
 
 	if( this->chChangeState == CH_ST_DONE ){
 		*ONID = this->lastONID;
 		*TSID = this->lastTSID;
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 void CTSOut::OnChChanged(WORD onid, WORD tsid)
@@ -80,13 +88,13 @@ void CTSOut::OnChChanged(WORD onid, WORD tsid)
 	this->lastTSID = tsid;
 	this->epgUtil.ClearSectionStatus();
 
-	if( this->enableDecodeFlag != FALSE || this->emmEnableFlag != FALSE ){
+	if( this->enableDecodeFlag || this->emmEnableFlag ){
 		//スクランブル解除かEMM処理が設定されている場合だけ実行
 		if( this->decodeUtil.SetNetwork(onid, tsid) == false ){
 			AddDebugLog(L"★★Decode DLL load err [CTSOut::OnChChanged()]");
 			//再試行は意味がなさそうなので廃止
 		}
-		this->decodeUtil.SetEmm(this->emmEnableFlag != FALSE);
+		this->decodeUtil.SetEmm(this->emmEnableFlag);
 	}
 	for( const auto& item : this->serviceUtilMap ){
 		item.second->Clear(tsid);
@@ -161,7 +169,7 @@ void CTSOut::AddTSBuff(BYTE* data, DWORD dataSize)
 					}
 				}else{
 					this->serviceFilter.FilterPacket(this->decodeBuff, data + i, packet);
-					if( this->parseEpgPostProcess == FALSE ){
+					if( this->parseEpgPostProcess == false ){
 						if( packet.PID < BON_SELECTIVE_PID ){
 							ParseEpgPacket(data + i, packet);
 						}else{
@@ -287,6 +295,10 @@ void CTSOut::UpdateFilterServiceID()
 	this->serviceFilter.SetServiceID(false, filterSIDList);
 }
 
+//ロゴの更新を調べる
+//引数：
+// logoTypeFlags	[IN]フラグ(ロゴタイプnを取得するとき下位からnビット目をセットする)
+// result			[OUT]結果
 void CTSOut::CheckLogo(DWORD logoTypeFlags, CHECK_LOGO_RESULT& result)
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
@@ -339,14 +351,14 @@ bool CTSOut::EnumLogoListProc(DWORD logoListSize, const LOGO_INFO* logoList, vec
 
 //EPGデータの保存を開始する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
-BOOL CTSOut::StartSaveEPG(
+// true（成功）、false（失敗）
+bool CTSOut::StartSaveEPG(
 	const wstring& epgFilePath_
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
 	if( this->epgFile != nullptr ){
-		return FALSE;
+		return false;
 	}
 	this->epgFilePath = epgFilePath_;
 	this->epgTempFilePath = epgFilePath_;
@@ -362,15 +374,17 @@ BOOL CTSOut::StartSaveEPG(
 	this->epgFile.reset(UtilOpenFile(this->epgTempFilePath, UTIL_SECURE_WRITE));
 	if( this->epgFile == nullptr ){
 		AddDebugLog(L"err");
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 //EPGデータの保存を終了する
+//引数：
+// copy			[IN]tmpからコピー処理行うかどうか
 void CTSOut::StopSaveEPG(
-	BOOL copy
+	bool copy
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
@@ -390,7 +404,7 @@ void CTSOut::StopSaveEPG(
 	string strPath;
 	WtoUTF8(this->epgTempFilePath, strTempPath);
 	WtoUTF8(this->epgFilePath, strPath);
-	if( copy == FALSE || rename(strTempPath.c_str(), strPath.c_str()) != 0 ){
+	if( copy == false || rename(strTempPath.c_str(), strPath.c_str()) != 0 ){
 		remove(strTempPath.c_str());
 	}
 #endif
@@ -402,34 +416,41 @@ void CTSOut::StopSaveEPG(
 //引数：
 // l_eitFlag		[IN]L-EITのステータスを取得
 EPG_SECTION_STATUS CTSOut::GetSectionStatus(
-	BOOL l_eitFlag
+	bool l_eitFlag
 	)
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
-	return this->epgUtil.GetSectionStatus(l_eitFlag != FALSE);
+	return this->epgUtil.GetSectionStatus(l_eitFlag);
 }
 
 //指定サービスのEPGデータの蓄積状態を取得する
+//戻り値：
+// ステータス,取得できたかどうか
+//引数：
+// originalNetworkID		[IN]取得対象のOriginalNetworkID
+// transportStreamID		[IN]取得対象のTransportStreamID
+// serviceID				[IN]取得対象のServiceID
+// l_eitFlag				[IN]L-EITのステータスを取得
 pair<EPG_SECTION_STATUS, bool> CTSOut::GetSectionStatusService(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
-	BOOL l_eitFlag
+	bool l_eitFlag
 	)
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
-	return this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag != FALSE);
+	return this->epgUtil.GetSectionStatusService(originalNetworkID, transportStreamID, serviceID, l_eitFlag);
 }
 
 //EMM処理の動作設定
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
-// enable		[IN] TRUE（処理する）、FALSE（処理しない）
-BOOL CTSOut::SetEmm(
-	BOOL enable
+// enable		[IN] true（処理する）、false（処理しない）
+bool CTSOut::SetEmm(
+	bool enable
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
@@ -437,7 +458,7 @@ BOOL CTSOut::SetEmm(
 	try{
 		if( this->chChangeState == CH_ST_DONE ){
 			//チューニング済みで
-			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
+			if( enable && this->enableDecodeFlag == false && this->emmEnableFlag == false ){
 				//最初に EMM 処理が設定される場合は DLL を読み込む
 				//スクランブル解除が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == false ){
@@ -446,11 +467,11 @@ BOOL CTSOut::SetEmm(
 			}
 		}
 	}catch(...){
-		return FALSE;
+		return false;
 	}
 
 	this->emmEnableFlag = enable;
-	return this->decodeUtil.SetEmm(enable != FALSE);
+	return this->decodeUtil.SetEmm(enable);
 }
 
 //EMM処理を行った数
@@ -465,10 +486,10 @@ DWORD CTSOut::GetEmmCount()
 
 //DLLのロード状態を取得
 //戻り値：
-// TRUE（ロードに成功している）、FALSE（ロードに失敗している）
+// true（ロードに成功している）、false（ロードに失敗している）
 //引数：
 // loadErrDll		[OUT]ロードに失敗したDLLファイル名
-BOOL CTSOut::GetLoadStatus(
+bool CTSOut::GetLoadStatus(
 	wstring& loadErrDll
 	)
 {
@@ -479,10 +500,10 @@ BOOL CTSOut::GetLoadStatus(
 
 //自ストリームのサービス一覧を取得する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
-// funcGetList		[IN]戻り値がTRUEのときサービス情報の個数とそのリストを引数として呼び出される関数
-BOOL CTSOut::GetServiceListActual(
+// funcGetList		[IN]戻り値がtrueのときサービス情報の個数とそのリストを引数として呼び出される関数
+bool CTSOut::GetServiceListActual(
 	const std::function<void(DWORD, SERVICE_INFO*)>& funcGetList
 	)
 {
@@ -494,9 +515,9 @@ BOOL CTSOut::GetServiceListActual(
 		if( funcGetList ){
 			funcGetList(serviceListSize, serviceList);
 		}
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 //次に使用する制御IDを取得する
@@ -544,7 +565,7 @@ DWORD CTSOut::GetNextID()
 //引数：
 // sendUdpTcp	[IN]UDP/TCP送信用にする
 DWORD CTSOut::CreateServiceCtrl(
-	BOOL sendUdpTcp
+	bool sendUdpTcp
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
@@ -562,32 +583,32 @@ DWORD CTSOut::CreateServiceCtrl(
 
 //TSストリーム制御用コントロールを削除する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
 // id			[IN]制御識別ID
-BOOL CTSOut::DeleteServiceCtrl(
+bool CTSOut::DeleteServiceCtrl(
 	DWORD id
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
 
 	if( serviceUtilMap.erase(id) == 0 ){
-		return FALSE;
+		return false;
 	}
 
 	UpdateEnableDecodeFlag();
 	UpdateFilterServiceID();
 
-	return TRUE;
+	return true;
 }
 
 //制御対象のサービスを設定する
 //戻り値：
-// TRUE（成功）、FALSE（失敗
+// true（成功）、false（失敗）
 //引数：
 // id			[IN]制御識別ID
-// serviceID	[IN]対象サービスID
-BOOL CTSOut::SetServiceID(
+// serviceID	[IN]対象サービスID、0xFFFFで全サービス対象
+bool CTSOut::SetServiceID(
 	DWORD id,
 	WORD serviceID
 	)
@@ -596,16 +617,16 @@ BOOL CTSOut::SetServiceID(
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
-		return FALSE;
+		return false;
 	}
 
 	itr->second->SetSID(serviceID);
 	UpdateFilterServiceID();
 
-	return TRUE;
+	return true;
 }
 
-BOOL CTSOut::GetServiceID(
+bool CTSOut::GetServiceID(
 	DWORD id,
 	WORD* serviceID
 	)
@@ -614,16 +635,22 @@ BOOL CTSOut::GetServiceID(
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
-		return FALSE;
+		return false;
 	}
 	if( serviceID != nullptr ){
 		*serviceID = itr->second->GetSID();
 	}
 
-	return TRUE;
+	return true;
 }
 
-BOOL CTSOut::SendUdp(
+//UDPで送信を行う
+//戻り値：
+// true（成功）、false（失敗）
+//引数：
+// id			[IN]制御識別ID
+// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+bool CTSOut::SendUdp(
 	DWORD id,
 	vector<NW_SEND_INFO>* sendList
 	)
@@ -632,15 +659,21 @@ BOOL CTSOut::SendUdp(
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
-		return FALSE;
+		return false;
 	}
 
 	itr->second->SendUdp(sendList);
 
-	return TRUE;
+	return true;
 }
 
-BOOL CTSOut::SendTcp(
+//TCPで送信を行う
+//戻り値：
+// true（成功）、false（失敗）
+//引数：
+// id			[IN]制御識別ID
+// sendList		[IN/OUT]送信先リスト。nullptrで停止。送信に使用したポート(失敗のものは0x10000)がportにセットされる。
+bool CTSOut::SendTcp(
 	DWORD id,
 	vector<NW_SEND_INFO>* sendList
 	)
@@ -649,44 +682,44 @@ BOOL CTSOut::SendTcp(
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
-		return FALSE;
+		return false;
 	}
 
 	itr->second->SendTcp(sendList);
 
-	return TRUE;
+	return true;
 }
 
 //指定サービスの現在or次のEPG情報を取得する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
 // serviceID				[IN]取得対象のServiceID
-// nextFlag					[IN]TRUE（次の番組）、FALSE（現在の番組）
+// nextFlag					[IN]true（次の番組）、false（現在の番組）
 // epgInfo					[OUT]EPG情報
-BOOL CTSOut::GetEpgInfo(
+bool CTSOut::GetEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
-	BOOL nextFlag,
+	bool nextFlag,
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
 	EPG_EVENT_INFO* info;
-	if( this->epgUtil.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag != FALSE, &info) ){
+	if( this->epgUtil.GetEpgInfo(originalNetworkID, transportStreamID, serviceID, nextFlag, &info) ){
 		ConvertEpgInfo(originalNetworkID, transportStreamID, serviceID, info, epgInfo);
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 //指定イベントのEPG情報を取得する
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
 // originalNetworkID		[IN]取得対象のoriginalNetworkID
 // transportStreamID		[IN]取得対象のtransportStreamID
@@ -694,23 +727,23 @@ BOOL CTSOut::GetEpgInfo(
 // eventID					[IN]取得対象のEventID
 // pfOnlyFlag				[IN]p/fからのみ検索するかどうか
 // epgInfo					[OUT]EPG情報
-BOOL CTSOut::SearchEpgInfo(
+bool CTSOut::SearchEpgInfo(
 	WORD originalNetworkID,
 	WORD transportStreamID,
 	WORD serviceID,
 	WORD eventID,
-	BYTE pfOnlyFlag,
+	bool pfOnlyFlag,
 	EPGDB_EVENT_INFO* epgInfo
 	)
 {
 	lock_recursive_mutex lock(this->epgUtilLock);
 
 	EPG_EVENT_INFO* info;
-	if( this->epgUtil.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag != 0, &info) ){
+	if( this->epgUtil.SearchEpgInfo(originalNetworkID, transportStreamID, serviceID, eventID, pfOnlyFlag, &info) ){
 		ConvertEpgInfo(originalNetworkID, transportStreamID, serviceID, info, epgInfo);
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 //PC時計を元としたストリーム時間との差を取得する
@@ -726,21 +759,28 @@ int CTSOut::GetTimeDelay(
 
 //録画中かどうか
 //戻り値：
-// TRUE（録画中）、FALSE（していない）
-BOOL CTSOut::IsRec()
+// true（録画中）、false（していない）
+bool CTSOut::IsRec()
 {
 	lock_recursive_mutex lock(this->objLock);
 
 	for( const auto& item : this->serviceUtilMap ){
-		if( item.second->IsRec() == TRUE ){
-			return TRUE;
+		if( item.second->IsRec() ){
+			return true;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
-BOOL CTSOut::StartSave(
+//ファイル保存を開始する
+//戻り値：
+// true（成功）、false（失敗）
+//引数：
+// recParam				[IN]保存パラメータ
+// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
+// maxBuffCount			[IN]出力バッファ上限
+bool CTSOut::StartSave(
 	const SET_CTRL_REC_PARAM& recParam,
 	const vector<wstring>& saveFolderSub,
 	int maxBuffCount
@@ -750,21 +790,27 @@ BOOL CTSOut::StartSave(
 
 	auto itr = serviceUtilMap.find(recParam.ctrlID);
 	if( itr == serviceUtilMap.end() ){
-		return FALSE;
+		return false;
 	}
 
 	return itr->second->StartSave(recParam, saveFolderSub, maxBuffCount);
 }
 
-BOOL CTSOut::EndSave(
+//ファイル保存を終了する
+//戻り値：
+// true（成功）、false（失敗）
+//引数：
+// id			[IN]制御識別ID
+// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
+bool CTSOut::EndSave(
 	DWORD id,
-	BOOL* subRecFlag
+	bool* subRecFlag
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
-		return FALSE;
+		return false;
 	}
 
 	return itr->second->EndSave(subRecFlag);
@@ -772,43 +818,43 @@ BOOL CTSOut::EndSave(
 
 //スクランブル解除処理の動作設定
 //戻り値：
-// TRUE（成功）、FALSE（失敗）
+// true（成功）、false（失敗）
 //引数：
-// enable		[IN] TRUE（処理する）、FALSE（処理しない）
-BOOL CTSOut::SetScramble(
+// enable		[IN] true（処理する）、false（処理しない）
+bool CTSOut::SetScramble(
 	DWORD id,
-	BOOL enable
+	bool enable
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
 
 	auto itr = serviceUtilMap.find(id);
 	if( itr == serviceUtilMap.end() ){
-		return FALSE;
+		return false;
 	}
 
 	itr->second->SetScramble(enable);
 	UpdateEnableDecodeFlag();
-	return TRUE;
+	return true;
 }
 
-BOOL CTSOut::UpdateEnableDecodeFlag()
+bool CTSOut::UpdateEnableDecodeFlag()
 {
-	BOOL sendUdpTcpOnly = TRUE;
-	BOOL enable = FALSE;
+	bool sendUdpTcpOnly = true;
+	bool enable = false;
 	for( const auto& item : this->serviceUtilMap ){
 		if( item.second->GetScramble() >= 0 ){
 			if( item.second->GetSendUdpTcp() ){
 				//UDP/TCP送信用だけのときはその設定値に従う
 				if( sendUdpTcpOnly && item.second->GetScramble() ){
-					enable = TRUE;
+					enable = true;
 				}
 			}else{
 				//録画用のものがあるときはその設定値に従う
-				sendUdpTcpOnly = FALSE;
-				enable = FALSE;
+				sendUdpTcpOnly = false;
+				enable = false;
 				if( item.second->GetScramble() ){
-					enable = TRUE;
+					enable = true;
 					break;
 				}
 			}
@@ -818,7 +864,7 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 	try{
 		if( this->chChangeState == CH_ST_DONE ){
 			//チューニング済みで
-			if( enable != FALSE && this->enableDecodeFlag == FALSE && this->emmEnableFlag == FALSE ){
+			if( enable && this->enableDecodeFlag == false && this->emmEnableFlag == false ){
 				//最初にスクランブル解除が設定される場合は DLL を再読み込みする
 				//EMM 処理が設定されている場合は読み込み済みなので除外
 				if( this->decodeUtil.SetNetwork(this->lastONID, this->lastTSID) == false ){
@@ -827,22 +873,22 @@ BOOL CTSOut::UpdateEnableDecodeFlag()
 			}
 		}
 	}catch(...){
-		return FALSE;
+		return false;
 	}
 
 	this->enableDecodeFlag = enable;
-	return TRUE;
+	return true;
 }
 
 //字幕とデータ放送含めるかどうか
 //引数：
 // id					[IN]制御識別ID
-// enableCaption		[IN]字幕を TRUE（含める）、FALSE（含めない）
-// enableData			[IN]データ放送を TRUE（含める）、FALSE（含めない）
+// enableCaption		[IN]字幕を true（含める）、false（含めない）
+// enableData			[IN]データ放送を true（含める）、false（含めない）
 void CTSOut::SetServiceMode(
 	DWORD id,
-	BOOL enableCaption,
-	BOOL enableData
+	bool enableCaption,
+	bool enableData
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
@@ -905,6 +951,11 @@ void CTSOut::GetRecWriteSize(
 	}
 }
 
+//録画中のファイルのファイルパスを取得する
+//戻り値：
+// ファイルパス
+//引数：
+// id					[IN]制御識別ID
 wstring CTSOut::GetSaveFilePath(
 	DWORD id
 	)
@@ -918,10 +969,17 @@ wstring CTSOut::GetSaveFilePath(
 	return wstring();
 }
 
+//ドロップとスクランブルのカウントを保存する
+//引数：
+// id					[IN]制御識別ID
+// filePath				[IN]保存ファイル名
+// asUtf8				[IN]UTF-8で保存するか
+// dropSaveThresh		[IN]ドロップ数がこれ以上なら保存する
+// drop					[OUT]ドロップ数
 void CTSOut::SaveErrCount(
 	DWORD id,
 	const wstring& filePath,
-	BOOL asUtf8,
+	bool asUtf8,
 	int dropSaveThresh,
 	int scrambleSaveThresh,
 	ULONGLONG& drop,
@@ -961,7 +1019,7 @@ void CTSOut::SetBonDriver(
 }
 
 void CTSOut::SetNoLogScramble(
-	BOOL noLog
+	bool noLog
 	)
 {
 	lock_recursive_mutex lock(this->objLock);
@@ -973,7 +1031,7 @@ void CTSOut::SetNoLogScramble(
 }
 
 void CTSOut::SetParseEpgPostProcess(
-	BOOL parsePost
+	bool parsePost
 	)
 {
 	lock_recursive_mutex lock(this->objLock);

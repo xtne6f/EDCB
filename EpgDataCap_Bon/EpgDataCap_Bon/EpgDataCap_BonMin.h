@@ -45,7 +45,7 @@ private:
 	const CCmdStream* cmdCapture;
 	CCmdStream* resCapture;
 
-	recursive_mutex_ statusInfoLock;
+	std::recursive_mutex statusInfoLock;
 	VIEW_APP_STATUS_INFO statusInfo;
 
 	vector<CH_DATA4> serviceList;

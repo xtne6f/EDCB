@@ -32,11 +32,11 @@ public:
 	void SetGUI(bool f) { guiFlag = f; }
 
 protected:
-	mutable recursive_mutex_ managerLock;
+	mutable std::recursive_mutex managerLock;
 
 	CAutoResetEvent notifyEvent;
-	thread_ notifyThread;
-	atomic_bool_ notifyStopFlag;
+	std::thread notifyThread;
+	std::atomic_bool notifyStopFlag;
 	DWORD srvStatus;
 	DWORD notifyCount;
 	DWORD activeOrIdleCount;

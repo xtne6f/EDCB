@@ -53,8 +53,8 @@ public:
 	void SetFilePos(LONGLONG filePos);
 
 protected:
-	recursive_mutex_ utilLock;
-	recursive_mutex_ ioLock;
+	std::recursive_mutex utilLock;
+	std::recursive_mutex ioLock;
 	util_unique_handle udpMutex;
 	util_unique_handle tcpMutex;
 	CSendTSTCPDllUtil sendUdp;
@@ -72,8 +72,8 @@ protected:
 	int seekJitter;
 	LONGLONG currentFilePos;
 
-	thread_ readThread;
-	atomic_bool_ readStopFlag;
+	std::thread readThread;
+	std::atomic_bool readStopFlag;
 	std::unique_ptr<FILE, fclose_deleter> readFile;
 	std::unique_ptr<FILE, fclose_deleter> seekFile;
 protected:

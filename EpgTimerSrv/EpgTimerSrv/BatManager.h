@@ -22,7 +22,7 @@ public:
 	bool IsWorking() const;
 	bool IsWorkingWithoutNotification() const;
 protected:
-	mutable recursive_mutex_ managerLock;
+	mutable std::recursive_mutex managerLock;
 
 	CNotifyManager& notifyManager;
 	wstring managerName;
@@ -33,9 +33,9 @@ protected:
 	DWORD idleMargin;
 	DWORD nextBatMargin;
 	bool batWorkExitingFlag;
-	thread_ batWorkThread;
+	std::thread batWorkThread;
 	CAutoResetEvent batWorkEvent;
-	atomic_bool_ batWorkStopFlag;
+	std::atomic_bool batWorkStopFlag;
 protected:
 	void StartWork();
 	static void BatWorkThread(CBatManager* sys);

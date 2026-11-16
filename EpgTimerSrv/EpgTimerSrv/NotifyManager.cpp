@@ -219,7 +219,7 @@ void CNotifyManager::SendNotify()
 {
 	if( this->notifyThread.joinable() == false ){
 		this->notifyStopFlag = false;
-		this->notifyThread = thread_(SendNotifyThread, this);
+		this->notifyThread = std::thread(SendNotifyThread, this);
 	}
 	this->notifyEvent.Set();
 }

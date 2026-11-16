@@ -65,7 +65,7 @@ public:
 protected:
 	std::map<DWORD, std::shared_ptr<T> > m_list;
 	DWORD m_nextID;
-	mutable recursive_mutex_ m_lock;
+	mutable std::recursive_mutex m_lock;
 
 	DWORD getNextID()
 	{

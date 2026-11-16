@@ -538,7 +538,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					}
 					EPGDB_EVENT_INFO eventInfo;
 					if( this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
-					                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) ){
+					                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)) != FALSE, &eventInfo) ){
 						info = ConvertEpgInfoText(eventInfo);
 					}
 				}
@@ -651,7 +651,7 @@ void CEpgDataCap_BonDlg::OnTimer(UINT_PTR nIDEvent)
 					iconID = IDI_ICON_RED;
 				}else if( this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ){
 					iconID = IDI_ICON_GREEN;
-				}else if( this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ){
+				}else if( this->bonCtrl.GetOpenBonDriver(nullptr) == false ){
 					iconID = IDI_ICON_GRAY;
 				}
 		
@@ -1154,8 +1154,8 @@ BOOL CEpgDataCap_BonDlg::SelectBonDriver(LPCWSTR fileName)
 		this->statusInfo.originalNetworkID = -1;
 		this->statusInfo.transportStreamID = -1;
 	}
-	BOOL ret = this->bonCtrl.OpenBonDriver(fileName, this->setting.traceBonDriverLevel, this->setting.openWait, this->setting.tsBuffMaxCount);
-	if( ret == FALSE ){
+	bool ret = this->bonCtrl.OpenBonDriver(fileName, this->setting.traceBonDriverLevel, this->setting.openWait, this->setting.tsBuffMaxCount);
+	if( ret == false ){
 		wstring log;
 		Format(log, L"BonDriverのオープンができませんでした\r\n%ls\r\n", fileName);
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, log.c_str());
@@ -1185,7 +1185,7 @@ BOOL CEpgDataCap_BonDlg::SelectService(const CH_DATA4& chData)
 void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if( this->bonCtrl.StartChScan() == FALSE ){
+	if( this->bonCtrl.StartChScan() == false ){
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"チャンネルスキャンを開始できませんでした\r\n");
 		return;
 	}
@@ -1197,7 +1197,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonChscan()
 void CEpgDataCap_BonDlg::OnBnClickedButtonEpg()
 {
 	// TODO: ここにコントロール通知ハンドラー コードを追加します。
-	if( this->bonCtrl.StartEpgCap(nullptr) == FALSE ){
+	if( this->bonCtrl.StartEpgCap(nullptr) == false ){
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"EPG取得を開始できませんでした\r\n");
 		return;
 	}
@@ -1215,7 +1215,7 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 	}
 
 	//即時録画
-	this->recCtrlID = this->bonCtrl.CreateServiceCtrl(TRUE);
+	this->recCtrlID = this->bonCtrl.CreateServiceCtrl(true);
 	wstring serviceName;
 	Format(serviceName, L"%04X", this->bonCtrl.GetNWCtrlServiceID());
 	for( size_t i = 0; i < this->serviceList.size(); i++ ){
@@ -1245,8 +1245,8 @@ void CEpgDataCap_BonDlg::OnBnClickedButtonRec()
 	recParam.saveFolder.resize(1);
 	recParam.saveFolder.back().recFolder = this->recFolderList[0];
 	recParam.saveFolder.back().recFileName = fileName;
-	recParam.pittariFlag = FALSE;
-	if( this->bonCtrl.StartSave(recParam, this->recFolderList, this->setting.writeBuffMaxCount) == FALSE ){
+	recParam.pittariFlag = 0;
+	if( this->bonCtrl.StartSave(recParam, this->recFolderList, this->setting.writeBuffMaxCount) == false ){
 		this->bonCtrl.DeleteServiceCtrl(this->recCtrlID);
 		this->recCtrlID = 0;
 		SetDlgItemText(m_hWnd, IDC_EDIT_LOG, L"録画を開始できませんでした\r\n");
@@ -1362,7 +1362,7 @@ void CEpgDataCap_BonDlg::OnBnClickedCheckNextpg()
 	EPGDB_EVENT_INFO eventInfo;
 	if( this->bonCtrl.GetStreamID(&onid, &tsid) &&
 	    this->bonCtrl.GetEpgInfo(onid, tsid, this->bonCtrl.GetNWCtrlServiceID(),
-	                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)), &eventInfo) ){
+	                             Button_GetCheck(GetDlgItem(IDC_CHECK_NEXTPG)) != FALSE, &eventInfo) ){
 		info = ConvertEpgInfoText(eventInfo);
 	}
 	SetDlgItemText(m_hWnd, IDC_EDIT_PG_INFO, info.c_str());
@@ -1543,12 +1543,12 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 			return;
 		case CMD2_VIEW_APP_GET_STATUS:
 			{
-				BOOL chChgErr;
+				bool chChgErr;
 				DWORD val =
-					this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ? VIEW_APP_ST_ERR_BON :
+					this->bonCtrl.GetOpenBonDriver(nullptr) == false ? VIEW_APP_ST_ERR_BON :
 					this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
 					this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
-					this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
+					this->bonCtrl.IsChChanging(&chChgErr) == false && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 				res.WriteVALUE(val);
 				res.SetParam(CMD_SUCCESS);
 			}
@@ -1579,12 +1579,12 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 						info = this->statusInfo;
 					}
 					if( flags & VIEW_APP_FLAG_GET_STATUS ){
-						BOOL chChgErr;
+						bool chChgErr;
 						info.status =
-							this->bonCtrl.GetOpenBonDriver(nullptr) == FALSE ? VIEW_APP_ST_ERR_BON :
+							this->bonCtrl.GetOpenBonDriver(nullptr) == false ? VIEW_APP_ST_ERR_BON :
 							this->bonCtrl.IsRec() ? VIEW_APP_ST_REC :
 							this->bonCtrl.GetEpgCapStatus(nullptr) == CBonCtrl::ST_WORKING ? VIEW_APP_ST_GET_EPG :
-							this->bonCtrl.IsChChanging(&chChgErr) == FALSE && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
+							this->bonCtrl.IsChChanging(&chChgErr) == false && chChgErr ? VIEW_APP_ST_ERR_CH_CHG : VIEW_APP_ST_NORMAL;
 					}
 					if( flags & VIEW_APP_FLAG_GET_DELAY ){
 						info.delaySec = this->bonCtrl.GetTimeDelay();
@@ -1615,7 +1615,7 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 				SEARCH_EPG_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
 				if( cmd.ReadVALUE(&key) &&
-				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag, &epgInfo) ){
+				    this->bonCtrl.SearchEpgInfo(key.ONID, key.TSID, key.SID, key.eventID, key.pfOnlyFlag != 0, &epgInfo) ){
 					res.WriteVALUE(epgInfo);
 					res.SetParam(CMD_SUCCESS);
 				}
@@ -1626,7 +1626,7 @@ void CEpgDataCap_BonDlg::StartPipeServer()
 				GET_EPG_PF_INFO_PARAM key;
 				EPGDB_EVENT_INFO epgInfo;
 				if( cmd.ReadVALUE(&key) &&
-				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag, &epgInfo) ){
+				    this->bonCtrl.GetEpgInfo(key.ONID, key.TSID, key.SID, key.pfNextFlag != 0, &epgInfo) ){
 					res.WriteVALUE(epgInfo);
 					res.SetParam(CMD_SUCCESS);
 				}
@@ -1733,7 +1733,7 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 	case CMD2_VIEW_APP_CREATE_CTRL:
 		AddDebugLog(L"CMD2_VIEW_APP_CREATE_CTRL");
 		{
-			DWORD val = this->bonCtrl.CreateServiceCtrl(FALSE);
+			DWORD val = this->bonCtrl.CreateServiceCtrl(false);
 			this->cmdCtrlList.push_back(val);
 			res.WriteVALUE(val);
 			res.SetParam(CMD_SUCCESS);
@@ -1765,8 +1765,8 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 		{
 			SET_CTRL_MODE val;
 			if( cmd.ReadVALUE(&val) ){
-				this->bonCtrl.SetScramble(val.ctrlID, val.enableScramble);
-				this->bonCtrl.SetServiceMode(val.ctrlID, val.enableCaption, val.enableData);
+				this->bonCtrl.SetScramble(val.ctrlID, val.enableScramble != 0);
+				this->bonCtrl.SetServiceMode(val.ctrlID, val.enableCaption != 0, val.enableData != 0);
 				this->bonCtrl.SetServiceID(val.ctrlID, val.SID);
 				res.SetParam(CMD_SUCCESS);
 			}
@@ -1816,9 +1816,9 @@ void CEpgDataCap_BonDlg::CtrlCmdCallbackInvoked()
 				}else{
 					this->bonCtrl.GetErrCount(val.ctrlID, &resVal.drop, &resVal.scramble);
 				}
-				BOOL subRec;
+				bool subRec;
 				if( this->bonCtrl.EndSave(val.ctrlID, &subRec) ){
-					resVal.subRecFlag = subRec != FALSE;
+					resVal.subRecFlag = subRec;
 					res.WriteVALUE(resVal);
 					res.SetParam(CMD_SUCCESS);
 					if( this->cmdCtrlList.size() == 1 ){

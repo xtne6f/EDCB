@@ -149,7 +149,7 @@ public:
 		);
 
 protected:
-	recursive_mutex_ utilLock;
+	std::recursive_mutex utilLock;
 
 	CDecodeUtil decodeUtilClass;
 	CEpgDBUtil epgDBUtilClass;

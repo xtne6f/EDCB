@@ -218,7 +218,7 @@ private:
 	wstring tsExt;
 
 	mutable struct WATCH_CONTEXT {
-		recursive_mutex_ lock;
+		std::recursive_mutex lock;
 		DWORD count;
 		DWORD tick;
 	} watchContext;

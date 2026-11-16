@@ -126,10 +126,10 @@ bool CBonDriverUtil::OpenBonDriver(LPCWSTR bonDriverFolder, LPCWSTR bonDriverFil
 			this->statGetTsCalls = 0;
 			this->statGetTsBytes = 0;
 			this->watchdogStopEvent.Reset();
-			this->watchdogThread = thread_(WatchdogThread, this);
+			this->watchdogThread = std::thread(WatchdogThread, this);
 		}
 		this->driverOpenEvent.Reset();
-		this->driverThread = thread_(DriverThread, this);
+		this->driverThread = std::thread(DriverThread, this);
 		//Open処理が完了するまで待つ
 		this->driverOpenEvent.WaitOne();
 		if( this->openFlag ){

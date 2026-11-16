@@ -26,7 +26,7 @@ bool CUpnpSsdpServer::Start(const vector<SSDP_TARGET_INFO>& targetList_, int ifT
 	this->ssdpIfTypes = ifTypes;
 	this->initialWaitSec = initialWaitSec_;
 	this->stopFlag = false;
-	this->ssdpThread = thread_(SsdpThread, this);
+	this->ssdpThread = std::thread(SsdpThread, this);
 	return true;
 }
 

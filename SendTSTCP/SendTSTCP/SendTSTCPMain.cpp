@@ -229,7 +229,7 @@ bool CSendTSTCPMain::StartSend(
 	}
 
 	m_stopSendEvent.Reset();
-	m_sendThread = thread_(SendThread, this);
+	m_sendThread = std::thread(SendThread, this);
 
 	return true;
 }

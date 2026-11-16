@@ -1,7 +1,9 @@
 ﻿#pragma once
 
 #ifdef _WIN32
-#define _WIN32_WINNT _WIN32_WINNT_WS03
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT _WIN32_WINNT_WIN7
+#endif
 #include <sdkddkver.h>
 #endif
 

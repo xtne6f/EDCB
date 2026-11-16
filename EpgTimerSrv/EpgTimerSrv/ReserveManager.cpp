@@ -57,7 +57,7 @@ void CReserveManager::Initialize(const CEpgTimerSrvSetting::SETTING& s)
 	this->recInfoText.ParseText(fs_path(settingPath).append(REC_INFO_TEXT_NAME).c_str());
 	this->recInfo2Text.ParseText(fs_path(settingPath).append(REC_INFO2_TEXT_NAME).c_str());
 
-	this->watchdogThread = thread_(WatchdogThread, this);
+	this->watchdogThread = std::thread(WatchdogThread, this);
 }
 
 void CReserveManager::Finalize()

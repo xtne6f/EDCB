@@ -14,11 +14,11 @@
 class COneServiceUtil
 {
 public:
-	COneServiceUtil(BOOL sendUdpTcp_);
+	COneServiceUtil(bool sendUdpTcp_);
 	~COneServiceUtil(void);
 
 	//UDP/TCP送信用かどうか（不変値）
-	BOOL GetSendUdpTcp() {
+	bool GetSendUdpTcp() {
 		return this->sendUdpTcp;
 	}
 
@@ -40,7 +40,7 @@ public:
 	void SendUdp(
 		vector<NW_SEND_INFO>* sendList
 		) {
-		SendUdpTcp(sendList, FALSE, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
+		SendUdpTcp(sendList, false, this->sendUdp, this->udpPortMutex, MUTEX_UDP_PORT_NAME);
 	}
 
 	//TCPで送信を行う
@@ -49,7 +49,7 @@ public:
 	void SendTcp(
 		vector<NW_SEND_INFO>* sendList
 		) {
-		SendUdpTcp(sendList, TRUE, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
+		SendUdpTcp(sendList, true, this->sendTcp, this->tcpPortMutex, MUTEX_TCP_PORT_NAME);
 	}
 
 	//出力用TSデータを送る
@@ -72,12 +72,12 @@ public:
 
 	//ファイル保存を開始する
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// true（成功）、false（失敗）
 	//引数：
 	// recParam				[IN]保存パラメータ（ctrlIDフィールドは無視）
 	// saveFolderSub		[IN]HDDの空きがなくなった場合に一時的に使用するフォルダ
 	// maxBuffCount			[IN]出力バッファ上限
-	BOOL StartSave(
+	bool StartSave(
 		const SET_CTRL_REC_PARAM& recParam,
 		const vector<wstring>& saveFolderSub,
 		int maxBuffCount
@@ -85,23 +85,23 @@ public:
 
 	//ファイル保存を終了する
 	//戻り値：
-	// TRUE（成功）、FALSE（失敗）
+	// true（成功）、false（失敗）
 	//引数：
 	// subRecFlag	[OUT]成功のとき、サブ録画が発生したかどうか
-	BOOL EndSave(BOOL* subRecFlag = nullptr);
+	bool EndSave(bool* subRecFlag = nullptr);
 
 	//録画中かどうか
 	//戻り値：
-	// TRUE（録画中）、FALSE（していない）
-	BOOL IsRec();
+	// true（録画中）、false（していない）
+	bool IsRec();
 
 	//スクランブル解除処理の動作設定
 	//引数：
-	// enable		[IN] TRUE（処理する）、FALSE（処理しない）
+	// enable		[IN] true（処理する）、false（処理しない）
 	void SetScramble(
-		BOOL enable
+		bool enable
 		) {
-		this->enableScramble = enable != FALSE;
+		this->enableScramble = enable;
 	}
 
 	//スクランブル解除処理を行うかどうか
@@ -113,11 +113,11 @@ public:
 
 	//字幕とデータ放送含めるかどうか
 	//引数：
-	// enableCaption		[IN]字幕を TRUE（含める）、FALSE（含めない）
-	// enableData			[IN]データ放送を TRUE（含める）、FALSE（含めない）
+	// enableCaption		[IN]字幕を true（含める）、false（含めない）
+	// enableData			[IN]データ放送を true（含める）、false（含めない）
 	void SetServiceMode(
-		BOOL enableCaption,
-		BOOL enableData
+		bool enableCaption,
+		bool enableData
 		);
 
 	//エラーカウントをクリアする
@@ -143,7 +143,7 @@ public:
 	// drop				[OUT]ドロップ数
 	void SaveErrCount(
 		const wstring& filePath,
-		BOOL asUtf8,
+		bool asUtf8,
 		int dropSaveThresh,
 		int scrambleSaveThresh,
 		ULONGLONG& drop,
@@ -166,10 +166,10 @@ public:
 		);
 
 	void SetNoLogScramble(
-		BOOL noLog
+		bool noLog
 		);
 protected:
-	BOOL sendUdpTcp;
+	bool sendUdpTcp;
 	WORD SID;
 
 	int enableScramble;
@@ -188,7 +188,7 @@ protected:
 	WORD lastPMTVer;
 
 	enum { PITTARI_NONE, PITTARI_START, PITTARI_END_CHK, PITTARI_END } pittariState;
-	BOOL pittariSubRec;
+	bool pittariSubRec;
 	SET_CTRL_REC_PARAM pittariRecParam;
 	vector<wstring> pittariSaveFolderSub;
 	int pittariMaxBuffCount;
@@ -196,7 +196,7 @@ protected:
 protected:
 	static void SendUdpTcp(
 		vector<NW_SEND_INFO>* sendList,
-		BOOL tcpFlag,
+		bool tcpFlag,
 		CSendTSTCPDllUtil& sendNW,
 		vector<util_unique_handle>& portMutexList,
 		LPCWSTR mutexName

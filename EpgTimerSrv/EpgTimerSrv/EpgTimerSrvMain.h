@@ -156,15 +156,15 @@ private:
 	map<DWORD, EPG_AUTO_ADD_DATA>::const_iterator autoAddCheckItr;
 
 	//autoAddLock->settingLockの順にロックする
-	mutable recursive_mutex_ autoAddLock;
-	mutable recursive_mutex_ settingLock;
+	mutable std::recursive_mutex autoAddLock;
+	mutable std::recursive_mutex settingLock;
 	CMessageManager msgManager;
 #ifdef _WIN32
 	std::unique_ptr<void, void(*)(void*)> luaDllHolder;
 #endif
-	atomic_bool_ stoppingFlag;
+	std::atomic_bool stoppingFlag;
 
-	atomic_bool_ residentFlag;
+	std::atomic_bool residentFlag;
 	CEpgTimerSrvSetting::SETTING setting;
 	unsigned short tcpPort;
 	bool tcpIPv6;
@@ -174,18 +174,18 @@ private:
 	CHttpServer::SERVER_OPTIONS httpOptions;
 	string httpServerRandom;
 #ifdef _WIN32
-	atomic_bool_ useSyoboi;
+	std::atomic_bool useSyoboi;
 #endif
 	bool nwtvUdp;
 	bool nwtvTcp;
 	DWORD compatFlags;
 
 #ifdef _WIN32
-	thread_ doLuaWorkerThread;
-	recursive_mutex_ doLuaWorkerLock;
+	std::thread doLuaWorkerThread;
+	std::recursive_mutex doLuaWorkerLock;
 	vector<string> doLuaScriptQueue;
 #else
-	thread_ processLuaPostThread;
+	std::thread processLuaPostThread;
 	CAutoResetEvent processLuaPostStopEvent;
 #endif
 

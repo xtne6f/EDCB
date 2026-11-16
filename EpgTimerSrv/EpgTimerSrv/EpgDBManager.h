@@ -116,7 +116,7 @@ private:
 	class CRefLock
 	{
 	public:
-		CRefLock(pair<int, recursive_mutex_*>* ref_) : ref(ref_) {
+		CRefLock(pair<int, std::recursive_mutex*>* ref_) : ref(ref_) {
 			lock_recursive_mutex lock(*ref->second);
 			++ref->first;
 		}
@@ -125,16 +125,16 @@ private:
 			--ref->first;
 		}
 	private:
-		pair<int, recursive_mutex_*>* ref;
+		pair<int, std::recursive_mutex*>* ref;
 	};
 
-	mutable recursive_mutex_ epgMapLock;
-	mutable pair<int, recursive_mutex_*> epgMapRefLock;
+	mutable std::recursive_mutex epgMapLock;
+	mutable pair<int, std::recursive_mutex*> epgMapRefLock;
 
-	thread_ loadThread;
-	atomic_bool_ loadStop;
+	std::thread loadThread;
+	std::atomic_bool loadStop;
 	bool loadForeground;
-	atomic_bool_ initialLoadDone;
+	std::atomic_bool initialLoadDone;
 	int archivePeriodSec;
 
 	//これらデータベースの読み取りにかぎりepgMapRefLockでアクセスできる。LoadThread以外では変更できない
