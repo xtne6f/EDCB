@@ -26,14 +26,12 @@
 
 ビルド(MSYS2/Mingw-w64)
 ----------------------------------------
-※VisualStudioのインストールが面倒な場合お勧め
+※VisualStudioのインストールが面倒な場合お勧め。基本的にx64ビルドのみ
 
 0. [MSYS2](https://www.msys2.org/) の `msys2-x86_64-日付.exe`(64bitOS用) をインストール  
-   上記サイトに従って`pacman -Syu` →`pacman -Su`でパッケージをアップデート  
-   スタートメニューの"MSYS2 MINGW64"(32bitビルド時はMINGW32)を開き、起動した黒窓で以下を実行してmakeとgccをインストール
+   スタートメニューの"MSYS2 UCRT64"を開き、起動した黒窓で以下を実行してmakeとgccをインストール
    ```shell
-   pacman -S make mingw-w64-x86_64-gcc
-   pacman -S make mingw-w64-i686-gcc # 32bitビルド時
+   pacman -S make mingw-w64-ucrt-x86_64-gcc
    ```
 
 1. つづけて以下を実行（この文書が"C:/EDCB/Document"にあると仮定）
@@ -71,9 +69,9 @@
 ----------------------------------------
 ※ビルド環境が最もコンパクト
 
-0. https://github.com/niXman/mingw-builds-binaries/releases の「Release of 13.1.0-rt_v11-rev1」（上位バージョンがあればそれでもOK）
-   のリストから i686-13.1.0-release-win32-dwarf-msvcrt-rt_v11-rev1.7z(x86ビルド用) または
-   x86_64-13.1.0-release-win32-seh-msvcrt-rt_v11-rev1.7z(x64ビルド用) の7z圧縮ファイルをダウンロードしてどこかに展開  
+0. https://github.com/niXman/mingw-builds-binaries/releases の「Release of 15.2.0-rt_v13-rev1」（より上位のバージョンでもOK。より下位のバージョンは未検証）
+   のAssetsからいずれか(注意を参照)の7z圧縮ファイルをダウンロードしてどこかに展開  
+   （i686-15.2.0-release-win32-dwarf-ucrt-rt_v13-rev1.7z (x86ビルド用) または x86_64-15.2.0-release-win32-seh-ucrt-rt_v13-rev1.7z (x64ビルド用) を推奨）  
    （以下、"C:/mingw32"または"C:/mingw64"に展開したと仮定）
 
 1. RunMake.batを実行、"Specify make options :"のプロンプトで何も入力せずEnterキーを押す（クリーンしたいときはcleanと入力）
@@ -85,8 +83,7 @@
    "Specify make options :"のプロンプトでzlib52.dllと入力してEnterキーを押す
 
 （注意）
-- libwinpthread-1.dllは不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
-- 使用するMingw-w64は https://sourceforge.net/projects/mingw-w64/files/ でも可だが、更新が止まってバージョンが古いのでお勧めしない
+- "posix"ではlibwinpthread-1.dll、"mcf"ではlibmcfgthread-2.dllが必要。"win32"では不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
 - "Specify make options :"のプロンプトでプロジェクト名に.allを付けたもの(EpgTimerSrv.allなど)を入力すれば個別にビルドが可能
 
 
