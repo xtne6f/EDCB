@@ -29,37 +29,29 @@
 ※VisualStudioのインストールが面倒な場合お勧め。基本的にx64ビルドのみ
 
 0. [MSYS2](https://www.msys2.org/) の `msys2-x86_64-日付.exe`(64bitOS用) をインストール  
-   スタートメニューの"MSYS2 UCRT64"を開き、起動した黒窓で以下を実行してmakeとgccをインストール
+   スタートメニューの"MSYS2 UCRT64"を開き、起動した黒窓で以下を実行してiconvとmakeとgccをインストール
    ```shell
-   pacman -S make mingw-w64-ucrt-x86_64-gcc
+   pacman -S iconv make mingw-w64-ucrt-x86_64-gcc
    ```
 
 1. つづけて以下を実行（この文書が"C:/EDCB/Document"にあると仮定）
    ```shell
    cd /c/EDCB/Document/MinGW
    make
-   ```
-
-2. （lua52.dllが必要な場合のみ） https://github.com/xtne6f/lua/tree/v5.2-luabinaries をzipでダウンロード→展開して（"C:/lua-5.2-luabinaries"と仮定）
-   ```shell
-   cd /c/lua-5.2-luabinaries
-   make lua52.dll
-   ```
-
-3. （zlib52.dllが必要な場合のみ） https://github.com/xtne6f/lua-zlib/tree/v0.5-lua52 をzipでダウンロード→展開して（"C:/lua-zlib-0.5-lua52"と仮定）
-   ```shell
-   cd /c/lua-zlib-0.5-lua52
-   make zlib52.dll
+   make lua52.dll  # 必須でない。lua52.dllのビルド
+   make zlib52.dll  # 必須でない。zlib52.dllのビルド
+   make extra  # 必須でない。tsreadexなどの関連コマンドのビルド（lua52.dllとzlib52.dllのビルドも含まれる）
    ```
 
 （注意）
+- クリーンは`make clean`と`make clean_extra`
 - lua52.dllは https://sourceforge.net/projects/luabinaries/ からダウンロードしたものでもよい
   - EpgTimerSrv/liblua52-mingw-lazy-{i686|x86_64}.a は lua-5.2.4_Win{32|64}_dllw6_lib.zip から以下を実行して作成したインポートライブラリ
     ```shell
     dlltool -t zz -D lua52.dll -d lua52.def -y liblua52.a
     ```
 - EpgTimerAdminProxy.exe、asyncbuf.exe、relayread.exeを除く実行時はlibwinpthread-1.dllも必要（おそらくlibwinpthreadの仕様で
-  スタティックリンクだとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダ、TVTestではTVTest.exeのフォルダに置く
+  スタティックリンクだとハンドルリークするため）。EDCBではEpgTimerSrv.exeのフォルダとToolsフォルダ、TVTestではTVTest.exeのフォルダに置く
 - EpgDataCap_Bon.exeについては、使用するBonDriverに特別な対応がされていない限り、VC++でビルドされたIBonCast.dllが必要
 - EpgTimer.exeについては[その他](#その他)を参照
 
@@ -74,13 +66,9 @@
    （i686-15.2.0-release-win32-dwarf-ucrt-rt_v13-rev1.7z (x86ビルド用) または x86_64-15.2.0-release-win32-seh-ucrt-rt_v13-rev1.7z (x64ビルド用) を推奨）  
    （以下、"C:/mingw32"または"C:/mingw64"に展開したと仮定）
 
-1. RunMake.batを実行、"Specify make options :"のプロンプトで何も入力せずEnterキーを押す（クリーンしたいときはcleanと入力）
-
-2. （lua52.dllが必要な場合のみ） https://github.com/xtne6f/lua/tree/v5.2-luabinaries をzipでダウンロード→展開してRunMake.batを実行  
-   "Specify make options :"のプロンプトでlua52.dllと入力してEnterキーを押す
-
-3. （zlib52.dllが必要な場合のみ） https://github.com/xtne6f/lua-zlib/tree/v0.5-lua52 をzipでダウンロード→展開してRunMake.batを実行  
-   "Specify make options :"のプロンプトでzlib52.dllと入力してEnterキーを押す
+1. RunMake.batを実行、"Specify make options :"のプロンプトで何も入力せずEnterキーを押す（クリーンしたいときはcleanやclean_extraと入力）  
+   lua52.dllやzlib52.dllやextraをビルドしたいときはここで指定する  
+   "Done(0)."で止まれば成功
 
 （注意）
 - "posix"ではlibwinpthread-1.dll、"mcf"ではlibmcfgthread-2.dllが必要。"win32"では不要。ほかの注意事項は「ビルド(MSYS2/Mingw-w64)」と同様
