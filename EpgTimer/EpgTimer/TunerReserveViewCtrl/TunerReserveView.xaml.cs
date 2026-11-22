@@ -78,6 +78,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                 if (LeftDoubleClick != null)
                 {
                     LeftDoubleClick(sender, lastPopupPos);
+                    e.Handled = true;
                 }
             }
         }
@@ -158,16 +159,101 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
         }
 
-        public void SetReserveList(List<ReserveViewItem> programList, double width, double height)
+        public void SetReserveList(List<ReserveViewItem> reserveList, double width, double height)
         {
             try
             {
+                EpgSetting epgSetting = Settings.Instance.EpgSettingList[0];
                 canvas.Height = Math.Ceiling(height);
                 canvas.Width = Math.Ceiling(width);
+                var background = new SolidColorBrush(Color.FromRgb(epgSetting.EpgBackColorR, epgSetting.EpgBackColorG, epgSetting.EpgBackColorB));
+                background.Freeze();
+                reserveViewPanel.Background = background;
                 reserveViewPanel.Height = Math.Ceiling(height);
                 reserveViewPanel.Width = Math.Ceiling(width);
-                reserveViewPanel.Items = programList;
+                reserveViewPanel.Items = reserveList;
                 reserveViewPanel.InvalidateVisual();
+
+                for (int i = 0; i < canvas.Children.Count; i++)
+                {
+                    if (canvas.Children[i] is Rectangle)
+                    {
+                        canvas.Children.RemoveAt(i--);
+                    }
+                }
+
+                //0→50で塗りつぶしの不透明度が上がる
+                int fillOpacity = Math.Min(epgSetting.ReserveRectFillOpacity, 50) * 2;
+                //50→100で枠の不透明度が下がる
+                int strokeOpacity = Math.Min(100 - epgSetting.ReserveRectFillOpacity, 50) * 2;
+                //予約枠が色名指定のときは少し透過(0xA0)する
+                Brush strokeNormal = ColorDef.CustColorBrush(epgSetting.ReserveRectColorNormal, epgSetting.ContentCustColorList[17], 0xA0, strokeOpacity);
+                Brush strokeNoTuner = ColorDef.CustColorBrush(epgSetting.ReserveRectColorNoTuner, epgSetting.ContentCustColorList[19], 0xA0, strokeOpacity);
+                Brush strokeWarning = ColorDef.CustColorBrush(epgSetting.ReserveRectColorWarning, epgSetting.ContentCustColorList[20], 0xA0, strokeOpacity);
+                Brush fillNormal = ColorDef.CustColorBrush(epgSetting.ReserveRectColorNormal, epgSetting.ContentCustColorList[17], 0xA0, fillOpacity);
+                Brush fillNoTuner = ColorDef.CustColorBrush(epgSetting.ReserveRectColorNoTuner, epgSetting.ContentCustColorList[19], 0xA0, fillOpacity);
+                Brush fillWarning = ColorDef.CustColorBrush(epgSetting.ReserveRectColorWarning, epgSetting.ContentCustColorList[20], 0xA0, fillOpacity);
+                var blurEffect = new System.Windows.Media.Effects.DropShadowEffect() { BlurRadius = 10 };
+                blurEffect.Freeze();
+                var dashArray = new DoubleCollection() { 2.5, 1.5 };
+                dashArray.Freeze();
+
+                foreach (ReserveViewItem info in reserveList)
+                {
+                    //被り状態か視聴のみ
+                    if (info.ReserveInfo.OverlapMode != 1 &&
+                        info.ReserveInfo.OverlapMode != 2 &&
+                        info.ReserveInfo.RecSetting.GetRecMode() != 4)
+                    {
+                        continue;
+                    }
+                    var rect = new Rectangle();
+                    Rectangle fillOnlyRect = epgSetting.ReserveRectFillWithShadow ? null : new Rectangle();
+                    Rectangle fillRect = fillOnlyRect ?? rect;
+
+                    if (info.ReserveInfo.OverlapMode == 2)
+                    {
+                        rect.Stroke = strokeNoTuner;
+                        fillRect.Fill = fillNoTuner;
+                    }
+                    else if (info.ReserveInfo.OverlapMode == 1)
+                    {
+                        rect.Stroke = strokeWarning;
+                        fillRect.Fill = fillWarning;
+                    }
+                    else
+                    {
+                        rect.Stroke = strokeNormal;
+                        fillRect.Fill = fillNormal;
+                    }
+
+                    rect.Effect = blurEffect;
+                    rect.StrokeThickness = 3;
+                    if (info.ReserveInfo.RecSetting.GetRecMode() == 4)
+                    {
+                        rect.StrokeDashArray = dashArray;
+                        rect.StrokeDashCap = PenLineCap.Round;
+                    }
+                    rect.Width = info.Width;
+                    rect.Height = info.Height;
+                    rect.IsHitTestVisible = false;
+                    fillRect.Width = info.Width;
+                    fillRect.Height = info.Height;
+                    fillRect.IsHitTestVisible = false;
+
+                    Canvas.SetLeft(rect, info.LeftPos);
+                    Canvas.SetTop(rect, info.TopPos);
+                    Canvas.SetZIndex(rect, 10);
+                    canvas.Children.Add(rect);
+
+                    if (fillOnlyRect != null)
+                    {
+                        Canvas.SetLeft(fillOnlyRect, info.LeftPos);
+                        Canvas.SetTop(fillOnlyRect, info.TopPos);
+                        Canvas.SetZIndex(fillOnlyRect, 9);
+                        canvas.Children.Add(fillOnlyRect);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -262,6 +348,7 @@ namespace EpgTimer.TunerReserveViewCtrl
                     if (LeftDoubleClick != null)
                     {
                         LeftDoubleClick(sender, cursorPos);
+                        e.Handled = true;
                     }
                 }
             }

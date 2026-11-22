@@ -4,38 +4,42 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             xmlns:local="clr-namespace:EpgTimer"
              xmlns:my="clr-namespace:EpgTimer.EpgView"
              d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" IsVisibleChanged="UserControl_IsVisibleChanged">
     <Grid Name="grid_PG">
         <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="{StaticResource AppEpgHeaderGridLength}" />
+            <RowDefinition Height="{StaticResource AppEpgHeaderGridLength}" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="40" />
+            <ColumnDefinition Width="{StaticResource AppEpgHeaderGridLength}" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <Button Click="button_time_Click" Content="←" ContextMenuOpening="button_time_ContextMenuOpening" IsEnabled="False" Margin="0,0,0,20" Name="button_prev" Visibility="Hidden">
-            <Button.ContextMenu>
-                <local:ContextMenuEx />
-            </Button.ContextMenu>
-        </Button>
-        <Button Click="button_time_Click" Content="→" ContextMenuOpening="button_time_ContextMenuOpening" IsEnabled="False" Margin="0,20,0,0" Name="button_next" Visibility="{Binding Visibility, ElementName=button_prev}">
-            <Button.ContextMenu>
-                <local:ContextMenuEx />
-            </Button.ContextMenu>
-        </Button>
-        <ComboBox Grid.Column="1" Height="24" HorizontalAlignment="Left" Margin="8,8,0,0" Name="comboBox_service" SelectionChanged="comboBox_service_SelectionChanged" VerticalAlignment="Top" Width="219" />
-        <Button Content="標準モード" Grid.Column="1" Height="23" HorizontalAlignment="Left" Margin="233,8,0,0" VerticalAlignment="Top" Width="66" Click="button1_Click" />
-        <Button Click="button_now_Click" Content="現在" Grid.Row="1" />
-        <my:TimeView Grid.Row="2" Margin="0,0,0,18" x:Name="timeView" />
-        <my:WeekDayView Grid.Column="1" Grid.Row="1" Margin="0,0,18,0" x:Name="weekDayView" />
+        <UniformGrid Rows="2">
+            <Button Content="←" IsEnabled="False" Name="button_prev" Style="{StaticResource AppEpgButtonStyle}" Visibility="Hidden" Click="button_time_Click" ContextMenuOpening="button_time_ContextMenuOpening">
+                <Button.ContextMenu>
+                    <ContextMenu />
+                </Button.ContextMenu>
+            </Button>
+            <Button Content="→" IsEnabled="False" Name="button_next" Style="{StaticResource AppEpgButtonStyle}" Visibility="{Binding Visibility, ElementName=button_prev}" Click="button_time_Click" ContextMenuOpening="button_time_ContextMenuOpening">
+                <Button.ContextMenu>
+                    <ContextMenu />
+                </Button.ContextMenu>
+            </Button>
+        </UniformGrid>
+        <ComboBox Grid.Column="1" HorizontalAlignment="Left" Name="comboBox_service_ref" Style="{StaticResource AppComboBoxStyle}" VerticalAlignment="Top" Visibility="Hidden" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <ComboBox Margin="{StaticResource AppMarginL}" Name="comboBox_service" Style="{StaticResource AppComboBoxStyle}" Width="{Binding ActualWidth, ElementName=comboBox_service_ref}" SelectionChanged="comboBox_service_SelectionChanged" />
+            <Button Content="標準モード" Margin="{StaticResource AppMarginL}" Style="{StaticResource AppButtonStyle}" Click="button1_Click" />
+        </StackPanel>
+        <Button Content="現在" Grid.Row="1" Style="{StaticResource AppEpgButtonStyle}" Click="button_now_Click" />
+        <my:TimeView Grid.Row="2" x:Name="timeView" />
+        <my:WeekDayView Grid.Column="1" Grid.Row="1" x:Name="weekDayView" Click="weekDayView_Click" />
         <Grid ContextMenuOpening="grid_content_ContextMenuOpening" Grid.Column="1" Grid.Row="2" Name="grid_content">
             <my:ProgramView x:Name="epgProgramView" LeftDoubleClick="epgProgramView_LeftDoubleClick" ScrollChanged="epgProgramView_ScrollChanged" />
             <Grid.ContextMenu>
-                <local:ContextMenuEx>
+                <ContextMenu>
                     <MenuItem Click="cm_add_preset_Click" Header="簡易予約" Name="cm_new" />
                     <MenuItem Header="予約変更 (_C)" Name="cm_chg">
                         <MenuItem Click="cm_chg_Click" Header="ダイアログ表示 (_X)" />
@@ -72,8 +76,11 @@
                     <MenuItem Click="cm_chg_viewMode_Click" Header="リスト表示モード (_3)" Name="cm_chg_viewMode3" />
                     <Separator />
                     <MenuItem Click="cm_viewSet_Click" Header="表示設定 (_W)" />
-                </local:ContextMenuEx>
+                </ContextMenu>
             </Grid.ContextMenu>
         </Grid>
+        <Popup Name="popup_error" Placement="Mouse" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+            <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+        </Popup>
     </Grid>
 </UserControl>

@@ -32,6 +32,15 @@ namespace EpgTimer
         {
             InitializeComponent();
 
+            // スクロールバーの操作性のため
+            var margin = listView_reserve.Margin;
+            margin.Right = -listView_reserve.BorderThickness.Right + (double)FindResource("AppScrollBarAdjustment");
+            listView_reserve.Margin = margin;
+
+            var style = (Style)listView_reserve.FindResource("itemStyle");
+            style.BasedOn = listView_reserve.ItemContainerStyle;
+            listView_reserve.ItemContainerStyle = style;
+
             columnList = gridView_reserve.Columns.ToDictionary(info => (string)((GridViewColumnHeader)info.Header).Tag);
             gridView_reserve.Columns.Clear();
             foreach (ListColumnInfo info in Settings.Instance.ReserveListColumn)
@@ -45,8 +54,19 @@ namespace EpgTimer
             if (Settings.Instance.ResHideButton)
             {
                 stackPanel_button.Visibility = Visibility.Collapsed;
+                frameworkElement_buttonMargin.Visibility = Visibility.Collapsed;
+            }
+            if (Settings.Instance.ResDockButtonToLeft)
+            {
+                Grid.SetColumn(stackPanel_button, 0);
+                frameworkElement_buttonMargin.Visibility = Visibility.Collapsed;
             }
             listView_reserve.AlternationCount = Settings.Instance.ResAlternationCount;
+            if (Settings.ContextMenuResourceDictionary != null)
+            {
+                listView_reserve.ContextMenu.Resources.MergedDictionaries.Add(Settings.ContextMenuResourceDictionary);
+                ((ContextMenu)FindResource("itemMenu")).Resources.MergedDictionaries.Add(Settings.ContextMenuResourceDictionary);
+            }
         }
 
 
@@ -147,6 +167,7 @@ namespace EpgTimer
         private void listView_reserve_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             ChangeReserve();
+            e.Handled = true;
         }
 
         private void button_change_Click(object sender, RoutedEventArgs e)
@@ -158,100 +179,120 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItem != null)
             {
-                ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
-                ChgReserveWindow dlg = new ChgReserveWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-                dlg.SetReserveInfo(item.ReserveInfo);
-                if (dlg.ShowDialog() == true)
-                {
-                }
+                var win = new ChgReserveWindow();
+                ((MainWindow)Application.Current.MainWindow).SwapOwnedReserveWindow(win);
+                win.SetReserveInfo(((ReserveItem)listView_reserve.SelectedItem).ReserveInfo);
+                win.Show();
             }
         }
 
         private void recmode_Click(object sender, RoutedEventArgs e)
         {
-            try
+            var list = new List<ReserveData>();
+            var originalRecModeList = new List<byte>();
+            foreach (ReserveItem item in listView_reserve.SelectedItems)
             {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (ReserveItem item in listView_reserve.SelectedItems)
-                {
-                    byte recMode = byte.Parse((string)((MenuItem)sender).Tag);
-                    if (item.ReserveInfo.RecSetting.IsNoRec())
-                    {
-                        //録画モード情報を維持して無効化
-                        recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
-                    }
-                    item.ReserveInfo.RecSetting.RecMode = recMode;
-                    list.Add(item.ReserveInfo);
-                }
-                if (list.Count > 0)
+                originalRecModeList.Add(item.ReserveInfo.RecSetting.RecMode);
+                byte recMode = byte.Parse((string)((MenuItem)sender).Tag);
+                item.ReserveInfo.RecSetting.RecMode = CommonManager.Instance.DB.CombineRecModeAndNoRec(recMode, item.ReserveInfo.RecSetting.IsNoRec());
+                list.Add(item.ReserveInfo);
+            }
+            if (list.Count > 0)
+            {
+                string message = null;
+                try
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
+                        message = CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。";
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
+                catch (Exception ex)
+                {
+                    message = ex.ToString();
+                }
+                for (int i = 0; i < list.Count; i++)
+                {
+                    list[i].RecSetting.RecMode = originalRecModeList[i];
+                }
+                if (message != null)
+                {
+                    MessageBox.Show(message);
+                }
             }
         }
 
         private void button_no_Click(object sender, RoutedEventArgs e)
         {
-            try
+            var list = new List<ReserveData>();
+            var originalRecModeList = new List<byte>();
+            foreach (ReserveItem item in listView_reserve.SelectedItems)
             {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (ReserveItem item in listView_reserve.SelectedItems)
-                {
-                    byte recMode = item.ReserveInfo.RecSetting.GetRecMode();
-                    if (item.ReserveInfo.RecSetting.IsNoRec() == false)
-                    {
-                        //録画モード情報を維持して無効化
-                        recMode = (byte)(CommonManager.Instance.DB.FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5);
-                    }
-                    item.ReserveInfo.RecSetting.RecMode = recMode;
-                    list.Add(item.ReserveInfo);
-                }
-                if (list.Count > 0)
+                originalRecModeList.Add(item.ReserveInfo.RecSetting.RecMode);
+                byte recMode = item.ReserveInfo.RecSetting.GetRecMode();
+                item.ReserveInfo.RecSetting.RecMode = CommonManager.Instance.DB.CombineRecModeAndNoRec(recMode, !item.ReserveInfo.RecSetting.IsNoRec());
+                list.Add(item.ReserveInfo);
+            }
+            if (list.Count > 0)
+            {
+                string message = null;
+                try
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
+                        message = CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。";
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
+                catch (Exception ex)
+                {
+                    message = ex.ToString();
+                }
+                for (int i = 0; i < list.Count; i++)
+                {
+                    list[i].RecSetting.RecMode = originalRecModeList[i];
+                }
+                if (message != null)
+                {
+                    MessageBox.Show(message);
+                }
             }
         }
 
         private void priority_Click(object sender, RoutedEventArgs e)
         {
-            try
+            var list = new List<ReserveData>();
+            var originalPriorityList = new List<byte>();
+            foreach (ReserveItem item in listView_reserve.SelectedItems)
             {
-                List<ReserveData> list = new List<ReserveData>();
-                foreach (ReserveItem item in listView_reserve.SelectedItems)
-                {
-                    item.ReserveInfo.RecSetting.Priority = byte.Parse((string)((MenuItem)sender).Tag);
-                    list.Add(item.ReserveInfo);
-                }
-                if (list.Count > 0)
+                originalPriorityList.Add(item.ReserveInfo.RecSetting.Priority);
+                item.ReserveInfo.RecSetting.Priority = byte.Parse((string)((MenuItem)sender).Tag);
+                list.Add(item.ReserveInfo);
+            }
+            if (list.Count > 0)
+            {
+                string message = null;
+                try
                 {
                     ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                     if (err != ErrCode.CMD_SUCCESS)
                     {
-                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。");
+                        message = CommonManager.GetErrCodeText(err) ?? "チューナー一覧の取得でエラーが発生しました。";
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
+                catch (Exception ex)
+                {
+                    message = ex.ToString();
+                }
+                for (int i = 0; i < list.Count; i++)
+                {
+                    list[i].RecSetting.Priority = originalPriorityList[i];
+                }
+                if (message != null)
+                {
+                    MessageBox.Show(message);
+                }
             }
         }
 
@@ -259,18 +300,16 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItem != null)
             {
-                SearchWindow dlg = new SearchWindow();
-                dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-
-                EpgSearchKeyInfo key = new EpgSearchKeyInfo();
-
                 ReserveItem item = listView_reserve.SelectedItem as ReserveItem;
 
+                SearchWindow search = ((MainWindow)Application.Current.MainWindow).CreateSearchWindow();
+
+                var key = new EpgSearchKeyInfo();
                 key.andKey = item.ReserveInfo.Title;
                 key.serviceList.Add((long)CommonManager.Create64Key(item.ReserveInfo.OriginalNetworkID, item.ReserveInfo.TransportStreamID, item.ReserveInfo.ServiceID));
 
-                dlg.SetSearchDefKey(key);
-                dlg.ShowDialog();
+                search.SetSearchDefKey(key);
+                search.Show();
             }
         }
 
@@ -278,8 +317,14 @@ namespace EpgTimer
         {
             if (listView_reserve.SelectedItem != null)
             {
-                ReserveItem info = listView_reserve.SelectedItem as ReserveItem;
-                CommonManager.Instance.FilePlay(info.ReserveInfo.ReserveID);
+                var item = (ReserveItem)listView_reserve.SelectedItem;
+                string errorMessage = CommonManager.Instance.FilePlay(item.ID);
+                if (errorMessage != null)
+                {
+                    popup_error.DataContext = errorMessage;
+                    popup_error.PlacementTarget = sender as Button ?? listView_reserve.ItemContainerGenerator.ContainerFromItem(item) as UIElement ?? listView_reserve;
+                    popup_error.IsOpen = true;
+                }
             }
         }
 
@@ -287,7 +332,7 @@ namespace EpgTimer
         {
             try
             {
-                List<UInt32> list = new List<UInt32>();
+                List<uint> list = new List<uint>();
                 foreach (ReserveItem item in listView_reserve.SelectedItems)
                 {
                     ReserveData reserveInfo = item.ReserveInfo;
@@ -311,9 +356,9 @@ namespace EpgTimer
 
         private void button_add_manual_Click(object sender, RoutedEventArgs e)
         {
-            ChgReserveWindow dlg = new ChgReserveWindow();
-            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
-            dlg.ShowDialog();
+            var win = new ChgReserveWindow();
+            ((MainWindow)Application.Current.MainWindow).SwapOwnedReserveWindow(win);
+            win.Show();
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -325,6 +370,11 @@ namespace EpgTimer
             }
         }
 
+        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            popup_error.IsOpen = false;
+        }
+
         private void ContextMenu_Header_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             foreach (object item in listView_reserve.ContextMenu.Items)
@@ -332,14 +382,9 @@ namespace EpgTimer
                 MenuItem menuItem = item as MenuItem;
                 if (menuItem != null && menuItem.IsCheckable)
                 {
-                    if (menuItem.Name == "HideButton")
-                    {
-                        menuItem.IsChecked = Settings.Instance.ResHideButton;
-                    }
-                    else
-                    {
-                        menuItem.IsChecked = Settings.Instance.ReserveListColumn.Any(info => info.Tag == menuItem.Name);
-                    }
+                    menuItem.IsChecked = menuItem.Name == "HideButton" ? Settings.Instance.ResHideButton :
+                                         menuItem.Name == "DockButtonToLeft" ? Settings.Instance.ResDockButtonToLeft :
+                                         Settings.Instance.ReserveListColumn.Any(info => info.Tag == menuItem.Name);
                 }
             }
         }
@@ -352,7 +397,7 @@ namespace EpgTimer
                 if (menuItem.IsChecked == true)
                 {
 
-                    Settings.Instance.ReserveListColumn.Add(new ListColumnInfo(menuItem.Name, Double.NaN));
+                    Settings.Instance.ReserveListColumn.Add(new ListColumnInfo(menuItem.Name, double.NaN));
                     gridView_reserve.Columns.Add(columnList[menuItem.Name]);
                 }
                 else
@@ -379,6 +424,14 @@ namespace EpgTimer
         {
             Settings.Instance.ResHideButton = ((MenuItem)sender).IsChecked;
             stackPanel_button.Visibility = Settings.Instance.ResHideButton ? Visibility.Collapsed : Visibility.Visible;
+            frameworkElement_buttonMargin.Visibility = Settings.Instance.ResHideButton || Settings.Instance.ResDockButtonToLeft ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void dockButtonToLeft_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.ResDockButtonToLeft = ((MenuItem)sender).IsChecked;
+            Grid.SetColumn(stackPanel_button, Settings.Instance.ResDockButtonToLeft ? 0 : 3);
+            frameworkElement_buttonMargin.Visibility = Settings.Instance.ResHideButton || Settings.Instance.ResDockButtonToLeft ? Visibility.Collapsed : Visibility.Visible;
         }
 
         void listView_reserve_KeyDown(object sender, KeyEventArgs e)
@@ -390,14 +443,14 @@ namespace EpgTimer
                     case Key.P:
                         if (e.IsRepeat == false)
                         {
-                            button_timeShiftPlay.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            timeShiftPlay_Click(sender, e);
                         }
                         e.Handled = true;
                         break;
                     case Key.R:
                         if (e.IsRepeat == false)
                         {
-                            button_no.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            button_no_Click(sender, e);
                         }
                         e.Handled = true;
                         break;
@@ -408,7 +461,7 @@ namespace EpgTimer
                 switch (e.Key)
                 {
                     case Key.F3:
-                        MenuItem_Click_ProgramTable(sender, e);
+                        jumpToProgramTable_Click(sender, e);
                         e.Handled = true;
                         break;
                     case Key.Enter:
@@ -420,7 +473,7 @@ namespace EpgTimer
                             MessageBox.Show(listView_reserve.SelectedItems.Count + "項目を削除してよろしいですか?", "確認",
                                             MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.OK) == MessageBoxResult.OK)
                         {
-                            button_del.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            button_del_Click(sender, e);
                         }
                         e.Handled = true;
                         break;
@@ -428,7 +481,7 @@ namespace EpgTimer
             }
         }
 
-        private void MenuItem_Click_ProgramTable(object sender, RoutedEventArgs e)
+        private void jumpToProgramTable_Click(object sender, RoutedEventArgs e)
         {
             ReserveItem item1 = this.listView_reserve.SelectedItem as ReserveItem;
             if (item1 != null)

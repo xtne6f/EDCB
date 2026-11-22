@@ -30,7 +30,7 @@ namespace EpgTimer
             get;
             set;
         }
-        public String EventName
+        public string EventName
         {
             get { return EventInfo.ShortInfo != null ? EventInfo.ShortInfo.event_name : ""; }
         }
@@ -49,12 +49,12 @@ namespace EpgTimer
             get;
             private set;
         }
-        public String ServiceName
+        public string ServiceName
         {
             get;
             set;
         }
-        public String NetworkName
+        public string NetworkName
         {
             get { return CommonManager.ConvertNetworkNameText(EventInfo.original_network_id); }
         }
@@ -66,7 +66,7 @@ namespace EpgTimer
         {
             get { return ReserveInfo != null; }
         }
-        public String Reserved
+        public string Reserved
         {
             get { return ReserveInfo == null ? "" : ReserveInfo.RecSetting.GetRecMode() == 4 ? "視" : "予"; }
         }
@@ -119,12 +119,12 @@ namespace EpgTimer
             }
         }
 
-        public String JyanruKey
+        public string JyanruKey
         {
             get
             {
                 //
-                String view = "";
+                string view = "";
                 if (EventInfo.ContentInfo != null)
                 {
                     // 小ジャンルを大ジャンルでまとめる
@@ -185,7 +185,7 @@ namespace EpgTimer
         /// <summary>
         /// 番組内容
         /// </summary>
-        public String ProgramContent
+        public string ProgramContent
         {
             get
             {

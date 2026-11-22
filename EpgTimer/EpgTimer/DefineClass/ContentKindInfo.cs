@@ -7,24 +7,24 @@ namespace EpgTimer
 {
     public class ContentKindInfo
     {
-        public UInt16 ID
+        public ushort ID
         {
             get
             {
-                return (UInt16)(Nibble1 << 8 | Nibble2);
+                return (ushort)(Nibble1 << 8 | Nibble2);
             }
         }
-        public Byte Nibble1
+        public byte Nibble1
         {
             get;
             set;
         }
-        public Byte Nibble2
+        public byte Nibble2
         {
             get;
             set;
         }
-        public String ListBoxView
+        public string ListBoxView
         {
             get
             {

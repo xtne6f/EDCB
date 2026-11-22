@@ -40,31 +40,39 @@ namespace EpgTimer.TunerReserveViewCtrl
             }
             Matrix m = ps.CompositionTarget.TransformToDevice;
 
-            var itemFontTitle = new EpgView.EpgViewPanel.ItemFont(Settings.Instance.EpgSettingList[0].FontNameTitle, Settings.Instance.EpgSettingList[0].FontBoldTitle, true);
-            var itemFontNormal = new EpgView.EpgViewPanel.ItemFont(Settings.Instance.EpgSettingList[0].FontName, false, true);
+            EpgSetting epgSetting = Settings.Instance.EpgSettingList[0];
+            var itemFontTitle = new EpgView.EpgViewPanel.ItemFont(epgSetting.FontNameTitle, epgSetting.FontBoldTitle, true);
+            var itemFontNormal = new EpgView.EpgViewPanel.ItemFont(epgSetting.FontName, false, true);
             if (itemFontTitle.GlyphType == null || itemFontNormal.GlyphType == null)
             {
                 return;
             }
 
             {
-                double sizeTitle = Math.Max(Settings.Instance.EpgSettingList[0].FontSizeTitle, 1);
-                double sizeNormal = Math.Max(Settings.Instance.EpgSettingList[0].FontSize, 1);
+                double sizeTitle = Math.Max(epgSetting.FontSizeTitle, 1);
+                double sizeNormal = Math.Max(epgSetting.FontSize, 1);
                 double indentTitle = sizeTitle * 1.7;
-                double indentNormal = 2;
-                SolidColorBrush colorTitle = ColorDef.CustColorBrush(Settings.Instance.EpgSettingList[0].TitleColor1,
-                                                                     Settings.Instance.EpgSettingList[0].TitleCustColor1);
-                SolidColorBrush colorNormal = ColorDef.CustColorBrush(Settings.Instance.EpgSettingList[0].TitleColor2,
-                                                                      Settings.Instance.EpgSettingList[0].TitleCustColor2);
+                double indentNormal = epgSetting.EpgTitleIndent ? indentTitle : 2;
+                Brush colorTitle = ColorDef.CustColorBrush(epgSetting.TitleColor1, epgSetting.TitleCustColor1);
+                Brush colorNormal = ColorDef.CustColorBrush(epgSetting.TitleColor2, epgSetting.TitleCustColor2);
+                //ジャンル「なし」の色
+                SolidColorBrush textAreaSolidBrush = ColorDef.CustColorBrush(epgSetting.ContentColorList[0x10], epgSetting.ContentCustColorList[0x10]);
+                Brush textAreaBrush = epgSetting.EpgGradation ? (Brush)ColorDef.GradientBrush(textAreaSolidBrush.Color) : textAreaSolidBrush;
+                //位置がずれないように枠線の幅が1より大きいときは両側で分け合う
+                double borderLeftSize = epgSetting.EpgBorderLeftSize;
+                double borderTopSize = epgSetting.EpgBorderTopSize;
+                double borderHalfLeft = borderLeftSize > 1 ? borderLeftSize / 2 : borderLeftSize;
+                double borderHalfTop = borderTopSize > 1 ? borderTopSize / 2 : borderTopSize;
 
                 foreach (ReserveViewItem info in Items)
                 {
                     var textDrawList = new List<Tuple<Brush, GlyphRun>>();
 
-                    double innerLeft = info.LeftPos + 1;
-                    double innerTop = info.TopPos + 1;
-                    double innerWidth = info.Width - 2;
-                    double innerHeight = info.Height - 2;
+                    double innerLeft = info.LeftPos + borderLeftSize / 2;
+                    //0.26は細枠線での微調整
+                    double innerTop = info.TopPos + borderTopSize / 2 - 0.26;
+                    double innerWidth = info.Width - borderLeftSize;
+                    double innerHeight = info.Height - borderTopSize;
                     double useHeight;
 
                     info.TitleDrawErr = true;
@@ -94,14 +102,16 @@ namespace EpgTimer.TunerReserveViewCtrl
                         }
                     }
 
-                    if (info.Width > 0 && info.Height > 0)
+                    double bgHeight = Math.Min(borderHalfTop, info.Height);
+                    if (innerWidth > 0 && bgHeight > 0)
                     {
-                        dc.DrawRectangle(Brushes.LightGray, null, new Rect(info.LeftPos, info.TopPos, info.Width, info.Height));
+                        dc.DrawRectangle(Background, null, new Rect(info.LeftPos + borderHalfLeft, info.TopPos, innerWidth, bgHeight));
+                        dc.DrawRectangle(Background, null, new Rect(info.LeftPos + borderHalfLeft, info.TopPos + info.Height - bgHeight, innerWidth, bgHeight));
                     }
                     if (innerWidth > 0 && innerHeight > 0)
                     {
-                        var textArea = new Rect(innerLeft, innerTop, innerWidth, innerHeight);
-                        dc.DrawRectangle(info.ReserveInfo.OverlapMode == 1 ? Brushes.Yellow : Brushes.White, null, textArea);
+                        var textArea = new Rect(info.LeftPos + borderHalfLeft, info.TopPos + borderHalfTop, innerWidth, innerHeight);
+                        dc.DrawRectangle(textAreaBrush, null, textArea);
                         dc.PushClip(new RectangleGeometry(textArea));
                         foreach (Tuple<Brush, GlyphRun> txtinfo in textDrawList)
                         {

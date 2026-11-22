@@ -30,8 +30,14 @@ namespace EpgTimer
             {
                 trustee = null;
             }
-            var pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 1024, 1024,
-                                                 null, System.IO.HandleInheritability.None, trustee == null ? 0 : PipeAccessRights.ChangePermissions);
+            var pipe =
+#if NETCOREAPP
+                NamedPipeServerStreamAcl.Create(
+#else
+                new NamedPipeServerStream(
+#endif
+                    pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 1024, 1024,
+                    null, System.IO.HandleInheritability.None, trustee == null ? 0 : PipeAccessRights.ChangePermissions);
             if (trustee != null)
             {
                 try

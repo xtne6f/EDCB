@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using System.Windows.Media.Imaging;
 
 namespace EpgTimer
 {
     class ChSet5
     {
-        public Dictionary<UInt64, ChSet5Item> ChList
+        public Dictionary<ulong, ChSet5Item> ChList
         {
             get;
             private set;
@@ -62,44 +63,44 @@ namespace EpgTimer
 
         public ChSet5()
         {
-            ChList = new Dictionary<UInt64, ChSet5Item>();
+            ChList = new Dictionary<ulong, ChSet5Item>();
             ChListOrderByIndex = new List<ChSet5Item>();
         }
 
-        public static bool IsVideo(UInt16 ServiceType)
+        public static bool IsVideo(ushort ServiceType)
         {
             return ServiceType == 0x01 || ServiceType == 0xA5 || ServiceType == 0xAD;
         }
-        public static bool IsDttv(UInt16 ONID)
+        public static bool IsDttv(ushort ONID)
         {
             return 0x7880 <= ONID && ONID <= 0x7FE8;
         }
-        public static bool IsBS(UInt16 ONID)
+        public static bool IsBS(ushort ONID)
         {
             return ONID == 0x0004;
         }
-        public static bool IsCS(UInt16 ONID)
+        public static bool IsCS(ushort ONID)
         {
             return IsCS1(ONID) || IsCS2(ONID) || IsCS3(ONID);
         }
-        public static bool IsCS1(UInt16 ONID)
+        public static bool IsCS1(ushort ONID)
         {
             return ONID == 0x0006;
         }
-        public static bool IsCS2(UInt16 ONID)
+        public static bool IsCS2(ushort ONID)
         {
             return ONID == 0x0007;
         }
-        public static bool IsCS3(UInt16 ONID)
+        public static bool IsCS3(ushort ONID)
         {
             return ONID == 0x000A;
         }
-        public static bool IsOther(UInt16 ONID)
+        public static bool IsOther(ushort ONID)
         {
             return IsDttv(ONID) == false && IsBS(ONID) == false && IsCS(ONID) == false;
         }
 
-        public static bool LoadWithStreamReader(System.IO.Stream stream)
+        public static bool LoadWithStreamReader(Stream stream)
         {
             Encoding enc;
             try
@@ -115,7 +116,7 @@ namespace EpgTimer
             {
                 Instance.ChList.Clear();
                 Instance.ChListOrderByIndex.Clear();
-                using (var reader = new System.IO.StreamReader(stream, enc))
+                using (var reader = new StreamReader(stream, enc))
                 {
                     for (string buff = reader.ReadLine(); buff != null; buff = reader.ReadLine())
                     {

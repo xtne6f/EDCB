@@ -1,16 +1,16 @@
 ﻿<Window x:Class="EpgTimer.Setting.SetDefRecSettingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="デフォルト録画設定" Height="530" Width="720" xmlns:my="clr-namespace:EpgTimer" WindowStartupLocation="CenterOwner">
-
+        xmlns:my="clr-namespace:EpgTimer"
+        SizeToContent="Height" Style="{StaticResource AppWindowStyle}" Title="デフォルト録画設定" Width="{StaticResource AppRecSettingWindowWidth}" WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="40" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <my:RecSettingView Grid.Row="1" x:Name="recSettingView" />
-        <Button Content="閉じる" Grid.Row="2" Height="23" HorizontalAlignment="Right" IsCancel="True" Margin="0,5,12,0" VerticalAlignment="Top" Width="75" />
-        <Label Content="※変更を行うにはプリセットごとに変更ボタンを押してください" Height="28" HorizontalAlignment="Left" Margin="12,2,0,0" Name="label1" VerticalAlignment="Top" />
+        <Label Content="※変更を行うにはプリセットごとに変更ボタンを押してください" Margin="{StaticResource AppEdgeMarginLTR}" Style="{StaticResource AppLabelStyle}" />
+        <my:RecSettingView Grid.Row="1" Margin="{StaticResource AppWideMarginT}" x:Name="recSettingView" />
+        <Button Content="閉じる" Grid.Row="2" HorizontalAlignment="Right" IsCancel="True" Margin="{StaticResource AppEdgeMargin}" Style="{StaticResource AppConfirmButtonStyle}" />
     </Grid>
 </Window>

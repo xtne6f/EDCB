@@ -26,24 +26,19 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            foreach (FontFamily family in Fonts.SystemFontFamilies)
             {
-                foreach (FontFamily family in Fonts.SystemFontFamilies)
+                string s;
+                if (family.FamilyNames.TryGetValue(XmlLanguage.GetLanguage("ja-JP"), out s))
                 {
-                    string s;
-                    if (family.FamilyNames.TryGetValue(XmlLanguage.GetLanguage("ja-JP"), out s))
-                    {
-                        comboBox_font.Items.Add(s);
-                        comboBox_fontTitle.Items.Add(s);
-                    }
+                    comboBox_font.Items.Add(s);
+                    comboBox_fontTitle.Items.Add(s);
                 }
-                //ローカル名がなくても一応候補に加える
-                foreach (FontFamily family in Fonts.SystemFontFamilies)
+                else
                 {
-                    if (family.FamilyNames.ContainsKey(XmlLanguage.GetLanguage("ja-JP")) == false)
-                    {
-                        comboBox_font.Items.Add(family.Source);
-                        comboBox_fontTitle.Items.Add(family.Source);
-                    }
+                    //ローカル名がなくても一応候補に加える
+                    comboBox_font.Items.Add(family.Source);
+                    comboBox_fontTitle.Items.Add(family.Source);
                 }
             }
         }
@@ -93,48 +88,50 @@ namespace EpgTimer.Setting
             var epgSetting = (EpgSetting)grid_color.DataContext;
             if (epgSetting != null)
             {
+                List<string> ccList = epgSetting.ContentColorList;
+                List<uint> cuList = epgSetting.ContentCustColorList;
                 initializingColor = true;
-                comboBox0.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x00]));
-                comboBox1.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x01]));
-                comboBox2.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x02]));
-                comboBox3.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x03]));
-                comboBox4.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x04]));
-                comboBox5.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x05]));
-                comboBox6.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x06]));
-                comboBox7.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x07]));
-                comboBox8.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x08]));
-                comboBox9.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x09]));
-                comboBox10.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x0A]));
-                comboBox11.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x0B]));
-                comboBox12.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x0F]));
-                comboBox13.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ContentColorList[0x10]));
+                comboBox0.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x00]));
+                comboBox1.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x01]));
+                comboBox2.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x02]));
+                comboBox3.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x03]));
+                comboBox4.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x04]));
+                comboBox5.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x05]));
+                comboBox6.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x06]));
+                comboBox7.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x07]));
+                comboBox8.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x08]));
+                comboBox9.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x09]));
+                comboBox10.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x0A]));
+                comboBox11.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x0B]));
+                comboBox12.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x0F]));
+                comboBox13.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(ccList[0x10]));
                 comboBox_service.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ServiceColor));
                 comboBox_reserveNormal.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ReserveRectColorNormal));
                 comboBox_reserveNo.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ReserveRectColorNo));
                 comboBox_reserveNoTuner.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ReserveRectColorNoTuner));
                 comboBox_reserveWarning.SelectedIndex = Math.Max(0, ColorDef.BrushNames.IndexOfKey(epgSetting.ReserveRectColorWarning));
                 initializingColor = false;
-                button0.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x00]));
-                button1.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x01]));
-                button2.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x02]));
-                button3.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x03]));
-                button4.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x04]));
-                button5.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x05]));
-                button6.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x06]));
-                button7.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x07]));
-                button8.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x08]));
-                button9.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x09]));
-                button10.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x0A]));
-                button11.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x0B]));
-                button12.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x0F]));
-                button13.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x10]));
+                button0.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x00]));
+                button1.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x01]));
+                button2.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x02]));
+                button3.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x03]));
+                button4.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x04]));
+                button5.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x05]));
+                button6.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x06]));
+                button7.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x07]));
+                button8.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x08]));
+                button9.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x09]));
+                button10.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x0A]));
+                button11.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x0B]));
+                button12.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x0F]));
+                button13.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x10]));
                 button_service.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ServiceCustColor));
                 button_epgBack.Background = new SolidColorBrush(Color.FromArgb(epgSetting.EpgBackColorA, epgSetting.EpgBackColorR,
                                                                                epgSetting.EpgBackColorG, epgSetting.EpgBackColorB));
-                button14.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x11]));
-                button15.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x12]));
-                button16.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x13]));
-                button17.Background = new SolidColorBrush(ColorDef.FromUInt(epgSetting.ContentCustColorList[0x14]));
+                button14.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x11]));
+                button15.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x12]));
+                button16.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x13]));
+                button17.Background = new SolidColorBrush(ColorDef.FromUInt(cuList[0x14]));
             }
         }
 
@@ -151,48 +148,50 @@ namespace EpgTimer.Setting
             epgSetting = (EpgSetting)grid_color.DataContext;
             if (epgSetting != null && initializingColor == false)
             {
-                epgSetting.ContentColorList[0x00] = ((KeyValuePair<string, SolidColorBrush>)comboBox0.SelectedItem).Key;
-                epgSetting.ContentColorList[0x01] = ((KeyValuePair<string, SolidColorBrush>)comboBox1.SelectedItem).Key;
-                epgSetting.ContentColorList[0x02] = ((KeyValuePair<string, SolidColorBrush>)comboBox2.SelectedItem).Key;
-                epgSetting.ContentColorList[0x03] = ((KeyValuePair<string, SolidColorBrush>)comboBox3.SelectedItem).Key;
-                epgSetting.ContentColorList[0x04] = ((KeyValuePair<string, SolidColorBrush>)comboBox4.SelectedItem).Key;
-                epgSetting.ContentColorList[0x05] = ((KeyValuePair<string, SolidColorBrush>)comboBox5.SelectedItem).Key;
-                epgSetting.ContentColorList[0x06] = ((KeyValuePair<string, SolidColorBrush>)comboBox6.SelectedItem).Key;
-                epgSetting.ContentColorList[0x07] = ((KeyValuePair<string, SolidColorBrush>)comboBox7.SelectedItem).Key;
-                epgSetting.ContentColorList[0x08] = ((KeyValuePair<string, SolidColorBrush>)comboBox8.SelectedItem).Key;
-                epgSetting.ContentColorList[0x09] = ((KeyValuePair<string, SolidColorBrush>)comboBox9.SelectedItem).Key;
-                epgSetting.ContentColorList[0x0A] = ((KeyValuePair<string, SolidColorBrush>)comboBox10.SelectedItem).Key;
-                epgSetting.ContentColorList[0x0B] = ((KeyValuePair<string, SolidColorBrush>)comboBox11.SelectedItem).Key;
-                epgSetting.ContentColorList[0x0F] = ((KeyValuePair<string, SolidColorBrush>)comboBox12.SelectedItem).Key;
-                epgSetting.ContentColorList[0x10] = ((KeyValuePair<string, SolidColorBrush>)comboBox13.SelectedItem).Key;
+                List<string> ccList = epgSetting.ContentColorList;
+                List<uint> cuList = epgSetting.ContentCustColorList;
+                ccList[0x00] = ((KeyValuePair<string, SolidColorBrush>)comboBox0.SelectedItem).Key;
+                ccList[0x01] = ((KeyValuePair<string, SolidColorBrush>)comboBox1.SelectedItem).Key;
+                ccList[0x02] = ((KeyValuePair<string, SolidColorBrush>)comboBox2.SelectedItem).Key;
+                ccList[0x03] = ((KeyValuePair<string, SolidColorBrush>)comboBox3.SelectedItem).Key;
+                ccList[0x04] = ((KeyValuePair<string, SolidColorBrush>)comboBox4.SelectedItem).Key;
+                ccList[0x05] = ((KeyValuePair<string, SolidColorBrush>)comboBox5.SelectedItem).Key;
+                ccList[0x06] = ((KeyValuePair<string, SolidColorBrush>)comboBox6.SelectedItem).Key;
+                ccList[0x07] = ((KeyValuePair<string, SolidColorBrush>)comboBox7.SelectedItem).Key;
+                ccList[0x08] = ((KeyValuePair<string, SolidColorBrush>)comboBox8.SelectedItem).Key;
+                ccList[0x09] = ((KeyValuePair<string, SolidColorBrush>)comboBox9.SelectedItem).Key;
+                ccList[0x0A] = ((KeyValuePair<string, SolidColorBrush>)comboBox10.SelectedItem).Key;
+                ccList[0x0B] = ((KeyValuePair<string, SolidColorBrush>)comboBox11.SelectedItem).Key;
+                ccList[0x0F] = ((KeyValuePair<string, SolidColorBrush>)comboBox12.SelectedItem).Key;
+                ccList[0x10] = ((KeyValuePair<string, SolidColorBrush>)comboBox13.SelectedItem).Key;
                 epgSetting.ServiceColor = ((KeyValuePair<string, SolidColorBrush>)comboBox_service.SelectedItem).Key;
                 epgSetting.ReserveRectColorNormal = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveNormal.SelectedItem).Key;
                 epgSetting.ReserveRectColorNo = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveNo.SelectedItem).Key;
                 epgSetting.ReserveRectColorNoTuner = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveNoTuner.SelectedItem).Key;
                 epgSetting.ReserveRectColorWarning = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveWarning.SelectedItem).Key;
-                epgSetting.ContentCustColorList[0x00] = ColorDef.ToUInt(((SolidColorBrush)button0.Background).Color);
-                epgSetting.ContentCustColorList[0x01] = ColorDef.ToUInt(((SolidColorBrush)button1.Background).Color);
-                epgSetting.ContentCustColorList[0x02] = ColorDef.ToUInt(((SolidColorBrush)button2.Background).Color);
-                epgSetting.ContentCustColorList[0x03] = ColorDef.ToUInt(((SolidColorBrush)button3.Background).Color);
-                epgSetting.ContentCustColorList[0x04] = ColorDef.ToUInt(((SolidColorBrush)button4.Background).Color);
-                epgSetting.ContentCustColorList[0x05] = ColorDef.ToUInt(((SolidColorBrush)button5.Background).Color);
-                epgSetting.ContentCustColorList[0x06] = ColorDef.ToUInt(((SolidColorBrush)button6.Background).Color);
-                epgSetting.ContentCustColorList[0x07] = ColorDef.ToUInt(((SolidColorBrush)button7.Background).Color);
-                epgSetting.ContentCustColorList[0x08] = ColorDef.ToUInt(((SolidColorBrush)button8.Background).Color);
-                epgSetting.ContentCustColorList[0x09] = ColorDef.ToUInt(((SolidColorBrush)button9.Background).Color);
-                epgSetting.ContentCustColorList[0x0A] = ColorDef.ToUInt(((SolidColorBrush)button10.Background).Color);
-                epgSetting.ContentCustColorList[0x0B] = ColorDef.ToUInt(((SolidColorBrush)button11.Background).Color);
-                epgSetting.ContentCustColorList[0x0F] = ColorDef.ToUInt(((SolidColorBrush)button12.Background).Color);
-                epgSetting.ContentCustColorList[0x10] = ColorDef.ToUInt(((SolidColorBrush)button13.Background).Color);
+                cuList[0x00] = ColorDef.ToUInt(((SolidColorBrush)button0.Background).Color);
+                cuList[0x01] = ColorDef.ToUInt(((SolidColorBrush)button1.Background).Color);
+                cuList[0x02] = ColorDef.ToUInt(((SolidColorBrush)button2.Background).Color);
+                cuList[0x03] = ColorDef.ToUInt(((SolidColorBrush)button3.Background).Color);
+                cuList[0x04] = ColorDef.ToUInt(((SolidColorBrush)button4.Background).Color);
+                cuList[0x05] = ColorDef.ToUInt(((SolidColorBrush)button5.Background).Color);
+                cuList[0x06] = ColorDef.ToUInt(((SolidColorBrush)button6.Background).Color);
+                cuList[0x07] = ColorDef.ToUInt(((SolidColorBrush)button7.Background).Color);
+                cuList[0x08] = ColorDef.ToUInt(((SolidColorBrush)button8.Background).Color);
+                cuList[0x09] = ColorDef.ToUInt(((SolidColorBrush)button9.Background).Color);
+                cuList[0x0A] = ColorDef.ToUInt(((SolidColorBrush)button10.Background).Color);
+                cuList[0x0B] = ColorDef.ToUInt(((SolidColorBrush)button11.Background).Color);
+                cuList[0x0F] = ColorDef.ToUInt(((SolidColorBrush)button12.Background).Color);
+                cuList[0x10] = ColorDef.ToUInt(((SolidColorBrush)button13.Background).Color);
                 epgSetting.ServiceCustColor = ColorDef.ToUInt(((SolidColorBrush)button_service.Background).Color);
                 epgSetting.EpgBackColorA = ((SolidColorBrush)button_epgBack.Background).Color.A;
                 epgSetting.EpgBackColorR = ((SolidColorBrush)button_epgBack.Background).Color.R;
                 epgSetting.EpgBackColorG = ((SolidColorBrush)button_epgBack.Background).Color.G;
                 epgSetting.EpgBackColorB = ((SolidColorBrush)button_epgBack.Background).Color.B;
-                epgSetting.ContentCustColorList[0x11] = ColorDef.ToUInt(((SolidColorBrush)button14.Background).Color);
-                epgSetting.ContentCustColorList[0x12] = ColorDef.ToUInt(((SolidColorBrush)button15.Background).Color);
-                epgSetting.ContentCustColorList[0x13] = ColorDef.ToUInt(((SolidColorBrush)button16.Background).Color);
-                epgSetting.ContentCustColorList[0x14] = ColorDef.ToUInt(((SolidColorBrush)button17.Background).Color);
+                cuList[0x11] = ColorDef.ToUInt(((SolidColorBrush)button14.Background).Color);
+                cuList[0x12] = ColorDef.ToUInt(((SolidColorBrush)button15.Background).Color);
+                cuList[0x13] = ColorDef.ToUInt(((SolidColorBrush)button16.Background).Color);
+                cuList[0x14] = ColorDef.ToUInt(((SolidColorBrush)button17.Background).Color);
             }
         }
 
@@ -234,10 +233,6 @@ namespace EpgTimer.Setting
                     OnUpdateTabListBox();
                 }
             }
-            else
-            {
-                MessageBox.Show("アイテムが選択されていません");
-            }
         }
 
         private void button_tab_del_Click(object sender, RoutedEventArgs e)
@@ -250,10 +245,6 @@ namespace EpgTimer.Setting
                     listBox_tab.SelectedIndex = 0;
                 }
                 OnUpdateTabListBox();
-            }
-            else
-            {
-                MessageBox.Show("アイテムが選択されていません");
             }
         }
 
@@ -302,6 +293,82 @@ namespace EpgTimer.Setting
             {
                 ((SolidColorBrush)((Button)sender).Background).Color = Color.FromArgb(dlg.A, dlg.R, dlg.G, dlg.B);
                 OnUpdateColor();
+            }
+        }
+
+        private void button_setLightDefault_Click(object sender, RoutedEventArgs e)
+        {
+            var epgSetting = (EpgSetting)grid_color.DataContext;
+            if (epgSetting != null)
+            {
+                List<string> ccList = epgSetting.ContentColorList;
+                List<uint> cuList = epgSetting.ContentCustColorList;
+                ccList[0x00] = "LightYellow";
+                ccList[0x01] = "Lavender";
+                ccList[0x02] = "LavenderBlush";
+                ccList[0x03] = "MistyRose";
+                ccList[0x04] = "Honeydew";
+                ccList[0x05] = "LightCyan";
+                ccList[0x06] = "PapayaWhip";
+                ccList[0x07] = "Pink";
+                ccList[0x08] = "LightYellow";
+                ccList[0x09] = "PapayaWhip";
+                ccList[0x0A] = "AliceBlue";
+                ccList[0x0B] = "AliceBlue";
+                ccList[0x0F] = "WhiteSmoke";
+                ccList[0x10] = "White";
+                epgSetting.ServiceColor = "LightSlateGray";
+                for (int i = 0x00; i <= 0x0B; i++)
+                {
+                    cuList[i] = 0xFFFFFFFF;
+                }
+                cuList[0x0F] = 0xFFFFFFFF;
+                cuList[0x10] = 0xFFFFFFFF;
+                epgSetting.ServiceCustColor = 0xFFFFFFFF;
+                epgSetting.EpgBackColorA = 0x80;
+                epgSetting.EpgBackColorR = 0xA9;
+                epgSetting.EpgBackColorG = 0xA9;
+                epgSetting.EpgBackColorB = 0xA9;
+                grid_color.DataContext = null;
+                grid_color.DataContext = epgSetting;
+            }
+        }
+
+        private void button_setDarkDefault_Click(object sender, RoutedEventArgs e)
+        {
+            var epgSetting = (EpgSetting)grid_color.DataContext;
+            if (epgSetting != null)
+            {
+                List<string> ccList = epgSetting.ContentColorList;
+                List<uint> cuList = epgSetting.ContentCustColorList;
+                for (int i = 0x00; i <= 0x0B; i++)
+                {
+                    ccList[i] = "カスタム";
+                }
+                ccList[0x0F] = "カスタム";
+                ccList[0x10] = "カスタム";
+                epgSetting.ServiceColor = "DarkSlateGray";
+                cuList[0x00] = 0xFF404012;
+                cuList[0x01] = 0xFF171747;
+                cuList[0x02] = 0xFF4D2B1A;
+                cuList[0x03] = 0xFF4D1B15;
+                cuList[0x04] = 0xFF1A4D1A;
+                cuList[0x05] = 0xFF154D4D;
+                cuList[0x06] = 0xFF4D3612;
+                cuList[0x07] = 0xFF661E0F;
+                cuList[0x08] = 0xFF404012;
+                cuList[0x09] = 0xFF4D3612;
+                cuList[0x0A] = 0xFF1A354D;
+                cuList[0x0B] = 0xFF1A354D;
+                cuList[0x0F] = 0xFF421B1B;
+                cuList[0x10] = 0xFF1E3333;
+                epgSetting.ServiceCustColor = 0xFFFFFFFF;
+                epgSetting.EpgBackColorA = 0x80;
+                epgSetting.EpgBackColorR = 0x10;
+                epgSetting.EpgBackColorG = 0x10;
+                epgSetting.EpgBackColorB = 0x10;
+                grid_color.DataContext = null;
+                grid_color.DataContext = epgSetting;
             }
         }
 

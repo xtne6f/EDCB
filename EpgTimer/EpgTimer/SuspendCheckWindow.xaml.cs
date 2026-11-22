@@ -30,27 +30,13 @@ namespace EpgTimer
             countTimer.Interval = TimeSpan.FromSeconds(1);
         }
 
-        public void SetMode(Byte reboot, Byte suspendMode)
+        public void SetMode(byte reboot, byte suspendMode)
         {
-            if (reboot == 1)
-            {
-                label1.Content = "再起動します。";
-            }
-            else
-            {
-                if (suspendMode == 1)
-                {
-                    label1.Content = "スタンバイに移行します。";
-                }
-                else if (suspendMode == 2)
-                {
-                    label1.Content = "休止に移行します。";
-                }
-                else if (suspendMode == 3)
-                {
-                    label1.Content = "シャットダウンします。";
-                }
-            }
+            label_mode0.Visibility = reboot != 1 && (suspendMode < 1 || suspendMode > 3) ? Visibility.Visible : Visibility.Collapsed;
+            label_mode1.Visibility = reboot != 1 && suspendMode == 1 ? Visibility.Visible : Visibility.Collapsed;
+            label_mode2.Visibility = reboot != 1 && suspendMode == 2 ? Visibility.Visible : Visibility.Collapsed;
+            label_mode3.Visibility = reboot != 1 && suspendMode == 3 ? Visibility.Visible : Visibility.Collapsed;
+            label_reboot.Visibility = reboot == 1 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void CountTimer(object sender, EventArgs e)

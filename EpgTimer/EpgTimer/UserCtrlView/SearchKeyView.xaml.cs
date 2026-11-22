@@ -33,12 +33,28 @@ namespace EpgTimer
                 comboBox_notKey.Items.Add(info);
             }
 
+            //listBox_contentを最適な幅にするため
+            string refView = "";
             EnableContentListBox(false);
             foreach (ushort id in CommonManager.Instance.ContentKindList)
             {
-                comboBox_content.Items.Add(new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id });
+                var info = new ContentKindInfo() { Nibble1 = (byte)(id >> 8), Nibble2 = (byte)id };
+                comboBox_content.Items.Add(info);
+                string view = info.ListBoxView;
+                if (view.Length > refView.Length)
+                {
+                    refView = view;
+                }
             }
             comboBox_content.SelectedIndex = 0;
+            listBox_content_ref.Items.Add(refView);
+
+            //listBox_dateを最適な幅にするため
+            listBox_date_ref.Items.Add(
+                (new DateTime(2000, 1, 4)).ToString("ddd") +
+                (new DateTime(2000, 1, 3)).ToString("ddd") +
+                (new DateTime(2000, 1, 2, 23, 59, 0)).ToString("ddd HH\\:mm") +
+                (new DateTime(2000, 1, 2, 23, 59, 0)).ToString(" ～ ddd HH\\:mm"));
 
             EnableDateListBox(false);
             comboBox_time_sw.ItemsSource = Enumerable.Range(0, 7).Select(i => (new DateTime(2000, 1, 2 + i)).ToString("ddd"));
@@ -273,7 +289,8 @@ namespace EpgTimer
                 EnableContentListBox(true);
                 if (listBox_content.Items.Contains(select))
                 {
-                    MessageBox.Show("すでに追加されています");
+                    popup_content_add.DataContext = "すでに追加されています";
+                    popup_content_add.IsOpen = true;
                     return;
                 }
                 listBox_content.Items.Add(select);
@@ -434,23 +451,20 @@ namespace EpgTimer
 
         private void SetVisibilityDateControls(bool isWeek)
         {
-            Visibility timeVis = isWeek ? Visibility.Hidden : Visibility.Visible;
-            Visibility weekVis = isWeek ? Visibility.Visible : Visibility.Hidden;
-            comboBox_time_sw.Visibility = timeVis;
-            comboBox_time_sh.Visibility = timeVis;
-            comboBox_time_sm.Visibility = timeVis;
-            comboBox_time_dash.Visibility = timeVis;
-            comboBox_time_ew.Visibility = timeVis;
-            checkBox_sun.Visibility = weekVis;
-            checkBox_mon.Visibility = weekVis;
-            checkBox_tue.Visibility = weekVis;
-            checkBox_wed.Visibility = weekVis;
-            checkBox_thu.Visibility = weekVis;
-            checkBox_fri.Visibility = weekVis;
-            checkBox_sat.Visibility = weekVis;
-            comboBox_week_sh.Visibility = weekVis;
-            comboBox_week_sm.Visibility = weekVis;
-            comboBox_week_dash.Visibility = weekVis;
+            //レイアウトを崩さないようCollapsedとHiddenを使い分ける
+            comboBox_time_sw.Visibility = isWeek ? Visibility.Hidden : Visibility.Visible;
+            comboBox_time_sh.Visibility = isWeek ? Visibility.Hidden : Visibility.Visible;
+            comboBox_time_sm.Visibility = isWeek ? Visibility.Hidden : Visibility.Visible;
+            comboBox_time_ew.Visibility = isWeek ? Visibility.Collapsed : Visibility.Visible;
+            checkBox_sun.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            checkBox_mon.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            checkBox_tue.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            checkBox_wed.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            checkBox_thu.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            checkBox_fri.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            checkBox_sat.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            comboBox_week_sh.Visibility = isWeek ? Visibility.Visible : Visibility.Hidden;
+            comboBox_week_sm.Visibility = isWeek ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void EnableContentListBox(bool isEnabled)
@@ -529,6 +543,11 @@ namespace EpgTimer
                 Settings.Instance.NotKeyList.Add((string)comboBox_notKey.Items[i]);
             }
             Settings.SaveToXmlFile();
+        }
+
+        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            popup_content_add.IsOpen = false;
         }
     }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- このファイルをEpgTimer.exeと同じ場所に配置してデザインをカスタマイズできます -->
+<!-- EpgTimer設定の「上書き用テーマを適用する」を有効にしてください -->
+<!-- EpgTimer本体の"App.rd.xaml"の定義を上書きするように記述してください -->
+<!-- ボタンをカスタマイズする例 -->
+<ResourceDictionary
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style x:Key="AppConfirmButtonStyle" BasedOn="{StaticResource AppConfirmButtonStyle}" TargetType="Button">
+    <Setter Property="Background" Value="LightGreen" />
+  </Style>
+</ResourceDictionary>

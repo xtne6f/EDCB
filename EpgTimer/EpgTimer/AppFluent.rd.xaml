@@ -1,0 +1,307 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <sys:Double x:Key="AppFontSize">12</sys:Double>
+    <sys:Double x:Key="AppLargeFontSize">13</sys:Double>
+
+    <sys:Double x:Key="AppAddPresetWindowWidth">450</sys:Double>
+    <sys:Double x:Key="AppColorSetWindowWidth">500</sys:Double>
+    <sys:Double x:Key="AppConnectWindowWidth">440</sys:Double>
+    <sys:Double x:Key="AppEpgDataViewSettingWindowHeight">700</sys:Double>
+    <sys:Double x:Key="AppMainWindowHeight">480</sys:Double>
+    <sys:Double x:Key="AppMainWindowWidth">640</sys:Double>
+    <sys:Double x:Key="AppNotifyLogWindowHeight">600</sys:Double>
+    <sys:Double x:Key="AppNotifyLogWindowWidth">800</sys:Double>
+    <sys:Double x:Key="AppRecFolderWindowWidth">600</sys:Double>
+    <sys:Double x:Key="AppRecInfoDescWindowHeight">600</sys:Double>
+    <sys:Double x:Key="AppRecInfoDescWindowWidth">800</sys:Double>
+    <sys:Double x:Key="AppRecSettingWindowWidth">900</sys:Double>
+    <sys:Double x:Key="AppSearchWindowHeight">600</sys:Double>
+    <sys:Double x:Key="AppSearchWindowWidth">950</sys:Double>
+    <sys:Double x:Key="AppSetDefSearchSettingWindowHeight">650</sys:Double>
+    <sys:Double x:Key="AppSettingWindowHeight">790</sys:Double>
+    <sys:Double x:Key="AppSettingWindowWidth">900</sys:Double>
+
+    <sys:Double x:Key="AppEpgListServiceColumnWidth">150</sys:Double>
+    <sys:Double x:Key="AppMainWindowButtonSeparatorWidth">15</sys:Double>
+    <sys:Double x:Key="AppScrollBarAdjustment">-1</sys:Double>
+    <sys:Double x:Key="AppSearchServiceNameColumnWidth">200</sys:Double>
+    <sys:Double x:Key="AppSideMenuButtonSeparatorHeight">10</sys:Double>
+
+    <Thickness x:Key="AppEdgeMargin">10</Thickness>
+    <Thickness x:Key="AppEdgeMarginL">10,0,0,0</Thickness>
+    <Thickness x:Key="AppEdgeMarginT">0,10,0,0</Thickness>
+    <Thickness x:Key="AppEdgeMarginR">0,0,10,0</Thickness>
+    <Thickness x:Key="AppEdgeMarginB">0,0,0,10</Thickness>
+    <Thickness x:Key="AppEdgeMarginLT">10,10,0,0</Thickness>
+    <Thickness x:Key="AppEdgeMarginLR">10,0</Thickness>
+    <Thickness x:Key="AppEdgeMarginLB">10,0,0,10</Thickness>
+    <Thickness x:Key="AppEdgeMarginTR">0,10,10,0</Thickness>
+    <Thickness x:Key="AppEdgeMarginTB">0,10</Thickness>
+    <Thickness x:Key="AppEdgeMarginRB">0,0,10,10</Thickness>
+    <Thickness x:Key="AppEdgeMarginLTR">10,10,10,0</Thickness>
+    <Thickness x:Key="AppEdgeMarginLTB">10,10,0,10</Thickness>
+    <Thickness x:Key="AppEdgeMarginLRB">10,0,10,10</Thickness>
+    <Thickness x:Key="AppEdgeMarginTRB">0,10,10,10</Thickness>
+
+    <Thickness x:Key="AppMargin">3</Thickness>
+    <Thickness x:Key="AppMarginL">3,0,0,0</Thickness>
+    <Thickness x:Key="AppMarginT">0,3,0,0</Thickness>
+    <Thickness x:Key="AppMarginR">0,0,3,0</Thickness>
+    <Thickness x:Key="AppMarginB">0,0,0,3</Thickness>
+    <Thickness x:Key="AppMarginLT">3,3,0,0</Thickness>
+    <Thickness x:Key="AppMarginLR">3,0</Thickness>
+    <Thickness x:Key="AppMarginLB">3,0,0,3</Thickness>
+    <Thickness x:Key="AppMarginTR">0,3,3,0</Thickness>
+    <Thickness x:Key="AppMarginTB">0,3</Thickness>
+    <Thickness x:Key="AppMarginRB">0,0,3,3</Thickness>
+    <Thickness x:Key="AppMarginLTR">3,3,3,0</Thickness>
+    <Thickness x:Key="AppMarginLTB">3,3,0,3</Thickness>
+    <Thickness x:Key="AppMarginLRB">3,0,3,3</Thickness>
+    <Thickness x:Key="AppMarginTRB">0,3,3,3</Thickness>
+
+    <Thickness x:Key="AppWideMargin">8</Thickness>
+    <Thickness x:Key="AppWideMarginL">8,0,0,0</Thickness>
+    <Thickness x:Key="AppWideMarginT">0,8,0,0</Thickness>
+    <Thickness x:Key="AppWideMarginR">0,0,8,0</Thickness>
+    <Thickness x:Key="AppWideMarginB">0,0,0,8</Thickness>
+    <Thickness x:Key="AppWideMarginLT">8,8,0,0</Thickness>
+    <Thickness x:Key="AppWideMarginLR">8,0</Thickness>
+    <Thickness x:Key="AppWideMarginLB">8,0,0,8</Thickness>
+    <Thickness x:Key="AppWideMarginTR">0,8,8,0</Thickness>
+    <Thickness x:Key="AppWideMarginTB">0,8</Thickness>
+    <Thickness x:Key="AppWideMarginRB">0,0,8,8</Thickness>
+    <Thickness x:Key="AppWideMarginLTR">8,8,8,0</Thickness>
+    <Thickness x:Key="AppWideMarginLTB">8,8,0,8</Thickness>
+    <Thickness x:Key="AppWideMarginLRB">8,0,8,8</Thickness>
+    <Thickness x:Key="AppWideMarginTRB">0,8,8,8</Thickness>
+
+    <Thickness x:Key="AppConfirmMargin">15,0,0,0</Thickness>
+    <Thickness x:Key="AppIndentMargin">20,0,0,0</Thickness>
+    <Thickness x:Key="AppWideConfirmMargin">50,0,0,0</Thickness>
+
+    <Thickness x:Key="AppListViewItemBorderThickness">5,0,0,0</Thickness>
+
+    <Brush x:Key="AppEpgDateSaturdayButtonForegroundBrush">RoyalBlue</Brush>
+    <Brush x:Key="AppEpgDateSundayButtonForegroundBrush">OrangeRed</Brush>
+    <Brush x:Key="AppEpgServiceHeaderBackgroundBrush">Silver</Brush>
+    <Brush x:Key="AppEpgTimeHeaderBackgroundBrush">White</Brush>
+    <Brush x:Key="AppEpgWeekDayHeaderBackgroundBrush">LightSlateGray</Brush>
+
+    <Color x:Key="AppEpgWeekDayHeaderTextBackgroundColor">Silver</Color>
+    <Color x:Key="AppEpgWeekDayHeaderSaturdayTextBackgroundColor">CornflowerBlue</Color>
+    <Color x:Key="AppEpgWeekDayHeaderSundayTextBackgroundColor">LightSalmon</Color>
+
+    <ControlTemplate x:Key="AppErrorMessagePopupTemplate">
+        <Border Background="{DynamicResource {x:Static SystemColors.AccentColorBrushKey}}" CornerRadius="5">
+            <TextBlock Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" Margin="8" MaxWidth="600" Text="{Binding}" TextWrapping="Wrap" />
+        </Border>
+    </ControlTemplate>
+
+    <DataTemplate x:Key="AppColorNameItemTemplate">
+        <StackPanel Orientation="Horizontal">
+            <Label Background="{Binding Value}" Width="20" />
+            <TextBlock Margin="{StaticResource AppMarginL}" Text="{Binding Key}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="AppRecInfoListViewIsProtectHeaderTemplate">
+        <Image Source="/Resources/key.ico" Stretch="None" />
+    </DataTemplate>
+
+    <GridLength x:Key="AppEpgHeaderGridLength">45</GridLength>
+    <GridLength x:Key="AppEpgListEventGridHeight">150</GridLength>
+    <GridLength x:Key="AppEpgListServiceGridWidth">200</GridLength>
+    <GridLength x:Key="AppSearchWindowTabGridHeight">405</GridLength>
+
+    <Style x:Key="AppEpgDateButtonTextBorderStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="OrangeRed" />
+    </Style>
+    <Style x:Key="AppEpgToolTipBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="DarkGray" />
+    </Style>
+    <Style x:Key="AppEpgWeekDayHeaderTextBorderStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="DarkRed" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="AppRecSettingBorderStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="#FF8C8E94" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style x:Key="AppSearchOptionsBorderStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="#FF8C8E94" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="10,0,10,3" />
+    </Style>
+
+    <Style x:Key="AppButtonStyle" BasedOn="{StaticResource {x:Type Button}}" TargetType="Button">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+    <Style x:Key="AppConfirmButtonStyle" BasedOn="{StaticResource AppButtonStyle}" TargetType="Button">
+        <Setter Property="MinWidth" Value="80" />
+    </Style>
+    <Style x:Key="AppEpgButtonStyle" BasedOn="{StaticResource AppButtonStyle}" TargetType="Button">
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style x:Key="AppEpgListButtonStyle" BasedOn="{StaticResource AppButtonStyle}" TargetType="Button">
+        <Setter Property="Padding" Value="0,5" />
+    </Style>
+    <Style x:Key="AppMainWindowButtonStyle" BasedOn="{StaticResource AppButtonStyle}" TargetType="Button">
+        <Setter Property="Margin" Value="2,2,2,5" />
+        <Setter Property="MinWidth" Value="75" />
+    </Style>
+    <Style x:Key="AppSideMenuButtonStyle" BasedOn="{StaticResource AppButtonStyle}" TargetType="Button">
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+    <Style x:Key="AppSuspendCheckButtonStyle" BasedOn="{StaticResource AppButtonStyle}" TargetType="Button">
+        <Setter Property="Padding" Value="20,4" />
+    </Style>
+
+    <Style x:Key="AppCheckBoxStyle" BasedOn="{StaticResource {x:Type CheckBox}}" TargetType="CheckBox">
+        <Setter Property="MinWidth" Value="55" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="AppRecInfoListViewCheckBoxStyle" TargetType="CheckBox">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <BulletDecorator>
+                        <BulletDecorator.Bullet>
+                            <!-- オフ状態のイメージ -->
+                            <Image Name="TickImage" Source="/Resources/key_no.ico" Stretch="None" />
+                        </BulletDecorator.Bullet>
+                        <ContentPresenter Grid.Column="1" VerticalAlignment="Center" />
+                    </BulletDecorator>
+                    <ControlTemplate.Triggers>
+                        <!-- オン状態のイメージ -->
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Source" TargetName="TickImage" Value="/Resources/key.ico" />
+                        </Trigger>
+                        <!-- 未確定状態のイメージ -->
+                        <Trigger Property="IsChecked" Value="{x:Null}">
+                            <Setter Property="Source" TargetName="TickImage" Value="/Resources/key.ico" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="AppComboBoxStyle" BasedOn="{StaticResource {x:Type ComboBox}}" TargetType="ComboBox">
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AppLabelStyle" BasedOn="{StaticResource {x:Type Label}}" TargetType="Label">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="AppTermLabelStyle" BasedOn="{StaticResource AppLabelStyle}" TargetType="Label">
+        <Setter Property="Padding" Value="0,0,15,0" />
+    </Style>
+
+    <Style x:Key="AppNowLineStyle" TargetType="Line">
+        <Setter Property="Opacity" Value="0.7" />
+        <Setter Property="Stroke" Value="OrangeRed" />
+        <Setter Property="StrokeThickness" Value="3" />
+    </Style>
+
+    <Style x:Key="AppErrorMessagePopupStyle" TargetType="Popup">
+        <Setter Property="AllowsTransparency" Value="True" />
+        <Setter Property="Placement" Value="Bottom" />
+        <Setter Property="VerticalOffset" Value="10" />
+    </Style>
+
+    <Style x:Key="AppSuspendCheckProgressBarStyle" BasedOn="{StaticResource {x:Type ProgressBar}}" TargetType="ProgressBar">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Margin" Value="0,20" />
+        <Setter Property="Width" Value="500" />
+    </Style>
+
+    <Style x:Key="AppRadioButtonStyle" BasedOn="{StaticResource {x:Type RadioButton}}" TargetType="RadioButton">
+        <Setter Property="MinWidth" Value="55" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AppRichTextBoxStyle" BasedOn="{StaticResource {x:Type RichTextBox}}" TargetType="RichTextBox" />
+
+    <Style x:Key="AppEpgTimeHeaderDayRunStyle" TargetType="Run">
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style x:Key="AppEpgTimeHeaderSaturdayRunStyle" BasedOn="{StaticResource AppEpgTimeHeaderDayRunStyle}" TargetType="Run">
+        <Setter Property="Foreground" Value="Blue" />
+    </Style>
+    <Style x:Key="AppEpgTimeHeaderSundayRunStyle" BasedOn="{StaticResource AppEpgTimeHeaderDayRunStyle}" TargetType="Run">
+        <Setter Property="Foreground" Value="Red" />
+    </Style>
+
+    <Style x:Key="AppSliderStyle" BasedOn="{StaticResource {x:Type Slider}}" TargetType="Slider">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AppEpgServiceHeaderTextBlockStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style x:Key="AppEpgServiceHeaderLightBackgroundTextBlockStyle" BasedOn="{StaticResource AppEpgServiceHeaderTextBlockStyle}" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="Black" />
+    </Style>
+    <Style x:Key="AppEpgTimeHeaderDateTextBlockStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style x:Key="AppEpgTimeHeaderHourTextBlockStyle" BasedOn="{StaticResource AppEpgTimeHeaderDateTextBlockStyle}" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{DynamicResource AppLargeFontSize}" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style x:Key="AppEpgToolTipTextBlockStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="MaxWidth" Value="400" />
+        <Setter Property="Padding" Value="1" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style x:Key="AppEpgWeekDayHeaderTextBlockStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="Black" />
+        <!-- やや重い感じになるのでbottomをつける -->
+        <Setter Property="Padding" Value="2,0,2,2" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style x:Key="AppEpgWeekDayHeaderSaturdayTextBlockStyle" BasedOn="{StaticResource AppEpgWeekDayHeaderTextBlockStyle}" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="DarkBlue" />
+    </Style>
+    <Style x:Key="AppEpgWeekDayHeaderSundayTextBlockStyle" BasedOn="{StaticResource AppEpgWeekDayHeaderTextBlockStyle}" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="DarkRed" />
+    </Style>
+    <Style x:Key="AppSearchResultListViewReservedTextBlockStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="Tomato" />
+    </Style>
+
+    <Style x:Key="AppMultiLineTextBoxStyle" BasedOn="{StaticResource {x:Type TextBox}}" TargetType="TextBox">
+        <Setter Property="VerticalContentAlignment" Value="Top" />
+    </Style>
+    <Style x:Key="AppErrLogTextBoxStyle" BasedOn="{StaticResource AppMultiLineTextBoxStyle}" TargetType="TextBox">
+        <Setter Property="FontFamily" Value="Consolas" />
+    </Style>
+
+    <Style x:Key="AppTextBoxStyle" BasedOn="{StaticResource {x:Type TextBox}}" TargetType="TextBox">
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="AppNarrowTextBoxStyle" BasedOn="{StaticResource AppTextBoxStyle}" TargetType="TextBox">
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Width" Value="90" />
+    </Style>
+
+    <Style x:Key="AppToggleButtonStyle" BasedOn="{StaticResource {x:Type ToggleButton}}" TargetType="ToggleButton">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style x:Key="AppWindowStyle" BasedOn="{StaticResource {x:Type Window}}" TargetType="Window" />
+</ResourceDictionary>
