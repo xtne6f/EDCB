@@ -29,9 +29,9 @@
 ※VisualStudioのインストールが面倒な場合お勧め。基本的にx64ビルドのみ
 
 0. [MSYS2](https://www.msys2.org/) の `msys2-x86_64-日付.exe`(64bitOS用) をインストール  
-   スタートメニューの"MSYS2 UCRT64"を開き、起動した黒窓で以下を実行してiconvとmakeとgccをインストール
+   スタートメニューの"MSYS2 UCRT64"を開き、起動した黒窓で以下を実行してmakeとgccをインストール
    ```shell
-   pacman -S iconv make mingw-w64-ucrt-x86_64-gcc
+   pacman -S make mingw-w64-ucrt-x86_64-gcc
    ```
 
 1. つづけて以下を実行（この文書が"C:/EDCB/Document"にあると仮定）
