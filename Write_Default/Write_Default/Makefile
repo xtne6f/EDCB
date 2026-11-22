@@ -40,14 +40,8 @@ embed.txt.b.obj: embed.txt
 	$(LD) $(EMBED_TXT_LDFLAGS2) $< -o $@
 embed.txt.obj: embed.txt.b.obj
 	$(OBJCOPY) --rename-section .data=.embed,readonly,contents --add-section .note.GNU-stack=/dev/null $< $@
-%.rc.obj: %.rc.u.obj resource.h targetver.h
+%.rc.obj: %.rc resource.h targetver.h
 	$(WINDRES) $(CPPFLAGS) -c 65001 -J rc -O coff $(OUTPUT_OPTION) $<
-%.rc.u.obj: %.rc
-ifdef MSYSTEM
-	iconv -f UTF-16LE -t UTF-8 $< >$@
-else
-	powershell -NoProfile -Command "&{cat $<|Out-File -Encoding UTF8 $@}"
-endif
 clean:
 	$(RM) stdafx.h.gch *.obj $(TARGET)$(TARGETEXT) $(TARGET).map
 install: $(TARGET)$(TARGETEXT)
