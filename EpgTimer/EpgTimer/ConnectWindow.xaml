@@ -16,7 +16,7 @@
             <TextBox Grid.Column="3" InputMethod.IsInputMethodEnabled="False" Name="textBox_srvPort" Style="{StaticResource AppNarrowTextBoxStyle}" />
         </Grid>
         <StackPanel Margin="{StaticResource AppMarginT}" Orientation="Horizontal">
-            <CheckBox Content="クライアント側に待ち受けポートを作る" Name="checkBox_clientPort" Style="{StaticResource AppCheckBoxStyle}" />
+            <CheckBox Content="※クライアント側に待ち受けポートを作る" Name="checkBox_clientPort" Style="{StaticResource AppCheckBoxStyle}" ToolTip="接続サーバーが待ち受けポート方式を許可しているか確認してください。" />
             <TextBox InputMethod.IsInputMethodEnabled="False" IsEnabled="{Binding IsChecked, ElementName=checkBox_clientPort, UpdateSourceTrigger=PropertyChanged}" Margin="{StaticResource AppWideMarginL}" Name="textBox_clientPort" Style="{StaticResource AppNarrowTextBoxStyle}" />
         </StackPanel>
         <Button Content="接続" HorizontalAlignment="Left" Margin="{StaticResource AppMarginT}" Style="{StaticResource AppConfirmButtonStyle}" Click="button_connect_Click" />
