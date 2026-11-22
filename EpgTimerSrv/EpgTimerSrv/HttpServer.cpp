@@ -119,8 +119,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	}
 	luaScriptPattern += "/api/*$";
 
-	const char* options[64] = {
-		"ssi_pattern", "",
+	const char* baseOptions[] = {
 		"enable_keep_alive", op.keepAlive ? "yes" : "no",
 		"access_control_list", acl.c_str(),
 		"extra_mime_types", extraMime.c_str(),
@@ -135,33 +134,34 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 		"lua_script_pattern", luaScriptPattern.c_str(),
 		"access_control_allow_origin", "",
 	};
-	int opCount = 2 * 14;
+	vector<const char*> options(baseOptions, baseOptions + array_size(baseOptions));
 	if( op.saveLog ){
-		options[opCount++] = "access_log_file";
-		options[opCount++] = accessLogPath.c_str();
-		options[opCount++] = "error_log_file";
-		options[opCount++] = errorLogPath.c_str();
+		options.push_back("access_log_file");
+		options.push_back(accessLogPath.c_str());
+		options.push_back("error_log_file");
+		options.push_back(errorLogPath.c_str());
 	}
 	if( authDomain.empty() == false ){
-		options[opCount++] = "authentication_domain";
-		options[opCount++] = authDomain.c_str();
+		options.push_back("authentication_domain");
+		options.push_back(authDomain.c_str());
 	}
 	if( ports.find('s') != string::npos ){
 		//セキュアポートを含むので認証鍵を指定する
-		options[opCount++] = "ssl_certificate";
-		options[opCount++] = sslCertPath.c_str();
+		options.push_back("ssl_certificate");
+		options.push_back(sslCertPath.c_str());
 	}
 	bool mightExist = false;
 	if( UtilFileExists(sslPeerFsPath, &mightExist).first || mightExist ){
 		//信頼済み証明書ファイルが「存在しないことを確信」できなければ有効にする
-		options[opCount++] = "ssl_verify_peer";
-		options[opCount++] = "yes";
+		options.push_back("ssl_verify_peer");
+		options.push_back("yes");
 	}
 	if( UtilFileExists(globalAuthFsPath, &mightExist).first || mightExist ){
 		//グローバルパスワードは「存在しないことを確信」できなければ指定しておく
-		options[opCount++] = "global_auth_file";
-		options[opCount++] = globalAuthPath.c_str();
+		options.push_back("global_auth_file");
+		options.push_back(globalAuthPath.c_str());
 	}
+	options.push_back(nullptr);
 
 	unsigned int feat = MG_FEATURES_FILES + MG_FEATURES_IPV6 + MG_FEATURES_LUA + MG_FEATURES_CACHE +
 	                    (ports.find('s') != string::npos ? MG_FEATURES_TLS : 0);
@@ -175,7 +175,7 @@ bool CHttpServer::StartServer(const SERVER_OPTIONS& op, const std::function<void
 	this->initLuaProc = initProc;
 	mg_callbacks callbacks = {};
 	callbacks.init_lua = &InitLua;
-	this->mgContext = mg_start(&callbacks, this, options);
+	this->mgContext = mg_start(&callbacks, this, options.data());
 	if( this->mgContext == nullptr ){
 		StopServer();
 		return false;

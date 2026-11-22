@@ -4,14 +4,16 @@
 
 #if !defined(_WIN32)
 #include <dlfcn.h>
-#include <sys/mman.h>
 #endif
 
 #include "civetweb_lua.h"
 /*#include "civetweb_private_lua.h"*/
 
 
-#if defined(_WIN32)
+#if !defined(NO_LUA_SERVER_PAGE)
+#if !defined(_WIN32)
+#include <sys/mman.h>
+#else
 static void *
 mmap(void *addr, int64_t len, int prot, int flags, int fd, int offset)
 {
@@ -49,16 +51,20 @@ munmap(void *addr, int64_t length)
 #define MAP_PRIVATE (0)
 #define PROT_READ (0)
 #endif
+#endif /* !NO_LUA_SERVER_PAGE */
 
 
 static const char *const LUASOCKET = "luasocket";
 static const char lua_regkey_ctx = 1;
 static const char lua_regkey_connlist = 2;
+#if !defined(NO_LUA_SERVER_PAGE)
 static const char lua_regkey_lsp_include_history = 3;
+#endif
 static const char lua_regkey_environment_type = 4;
 static const char lua_regkey_dtor = 5;
 
 
+#if !defined(NO_LUA_SERVER_PAGE)
 /* Limit nesting depth of mg.include.
  * This takes a lot of stack (~10 kB per recursion),
  * so do not use a too high limit. */
@@ -72,6 +78,7 @@ static int handle_lsp_request(struct mg_connection *,
                               const char *,
                               struct mg_file *,
                               struct lua_State *);
+#endif
 
 
 static void
@@ -402,6 +409,7 @@ lsp_connect(lua_State *L)
 #endif /* MG_LEGACY_INTERFACE */
 
 
+#if !defined(NO_LUA_SERVER_PAGE)
 static int
 lsp_error(lua_State *L)
 {
@@ -412,6 +420,7 @@ lsp_error(lua_State *L)
 	lua_pcall(L, 1, 0, 0);
 	return 0;
 }
+#endif
 
 
 /* Silently stop processing chunks. */
@@ -429,6 +438,7 @@ lsp_abort(lua_State *L)
 }
 
 
+#if !defined(NO_LUA_SERVER_PAGE)
 struct lsp_var_reader_data {
 	int64_t len;
 	int64_t consumed;
@@ -815,6 +825,7 @@ run_lsp_civetweb(struct mg_connection *conn,
 
 	return 0;
 }
+#endif /* !NO_LUA_SERVER_PAGE */
 
 
 /* mg.write: Send data to the client */
@@ -885,6 +896,7 @@ lsp_keep_alive(lua_State *L)
 }
 
 
+#if !defined(NO_LUA_SERVER_PAGE)
 /* Stack of includes */
 struct lsp_include_history {
 	int depth;
@@ -998,6 +1010,7 @@ lsp_include(lua_State *L)
 	}
 	return 0;
 }
+#endif /* !NO_LUA_SERVER_PAGE */
 
 
 /* mg.cry: Log an error. Default value for mg.onerror. */
@@ -2113,6 +2126,7 @@ lsp_response_send(lua_State *L)
 }
 
 
+#if defined(MG_EXPERIMENTAL_INTERFACES)
 /* Debug hook */
 static void
 lua_debug_hook(lua_State *L, lua_Debug *ar)
@@ -2189,6 +2203,7 @@ lua_debug_hook(lua_State *L, lua_Debug *ar)
 
 	printf("\n");
 }
+#endif /* MG_EXPERIMENTAL_INTERFACES */
 
 
 static const char *LUA_MG_FUNCTIONS =
@@ -2574,7 +2589,9 @@ prepare_lua_environment(struct mg_context *ctx,
                         int lua_env_type)
 {
 	const char *preload_file_name = NULL;
+#if defined(MG_EXPERIMENTAL_INTERFACES)
 	const char *debug_params = NULL;
+#endif
 
 	int lua_context_flags = lua_env_type;
 
@@ -2625,6 +2642,7 @@ prepare_lua_environment(struct mg_context *ctx,
 	/* State close function */
 	reg_gc(L, conn);
 
+#if !defined(NO_LUA_SERVER_PAGE)
 	/* Lua server pages store the depth of mg.include, in order
 	 * to detect recursions and prevent stack overflows. */
 	if (lua_env_type == LUA_ENV_TYPE_LUA_SERVER_PAGE) {
@@ -2635,6 +2653,7 @@ prepare_lua_environment(struct mg_context *ctx,
 		lua_settable(L, LUA_REGISTRYINDEX);
 		memset(h, 0, sizeof(struct lsp_include_history));
 	}
+#endif
 
 	/* Register mg module */
 	lua_newtable(L);
@@ -2671,9 +2690,11 @@ prepare_lua_environment(struct mg_context *ctx,
 		reg_conn_function(L, "redirect", lsp_redirect, conn);
 	}
 
+#if !defined(NO_LUA_SERVER_PAGE)
 	if (lua_env_type == LUA_ENV_TYPE_LUA_SERVER_PAGE) {
 		reg_conn_function(L, "include", lsp_include, conn);
 	}
+#endif
 
 	if (lua_env_type == LUA_ENV_TYPE_LUA_WEBSOCKET) {
 		reg_function(L, "write", lwebsock_write);
@@ -2776,6 +2797,7 @@ prepare_lua_environment(struct mg_context *ctx,
 		}
 	}
 
+#if defined(MG_EXPERIMENTAL_INTERFACES)
 	/* If debugging is enabled, add a hook */
 	if (debug_params) {
 		int mask = 0;
@@ -2790,6 +2812,7 @@ prepare_lua_environment(struct mg_context *ctx,
 		}
 		lua_sethook(L, lua_debug_hook, mask, 0);
 	}
+#endif
 }
 
 
@@ -2844,6 +2867,7 @@ mg_exec_lua_script(struct mg_connection *conn,
 }
 
 
+#if !defined(NO_LUA_SERVER_PAGE)
 static int
 handle_lsp_request(struct mg_connection *conn,
                    const char *path,
@@ -3009,6 +3033,7 @@ cleanup_handle_lsp_request:
 
 	return error;
 }
+#endif /* !NO_LUA_SERVER_PAGE */
 
 
 #if defined(USE_WEBSOCKET)

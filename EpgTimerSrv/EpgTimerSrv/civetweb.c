@@ -596,11 +596,6 @@ typedef const char *SOCK_OPT_TYPE;
 #define CRYPTO_LIB "libcrypto-3-x64.dll"
 #endif
 
-#if defined(OPENSSL_API_1_1)
-#define SSL_LIB "libssl-1_1-x64.dll"
-#define CRYPTO_LIB "libcrypto-1_1-x64.dll"
-#endif /* OPENSSL_API_1_1 */
-
 #endif
 #else /* defined(_WIN64) || defined(__MINGW64__) */
 #if !defined(SSL_LIB)
@@ -609,11 +604,6 @@ typedef const char *SOCK_OPT_TYPE;
 #define SSL_LIB "libssl-3.dll"
 #define CRYPTO_LIB "libcrypto-3.dll"
 #endif
-
-#if defined(OPENSSL_API_1_1)
-#define SSL_LIB "libssl-1_1.dll"
-#define CRYPTO_LIB "libcrypto-1_1.dll"
-#endif /* OPENSSL_API_1_1 */
 
 #endif /* SSL_LIB */
 #endif /* defined(_WIN64) || defined(__MINGW64__) */
@@ -888,15 +878,10 @@ typedef unsigned short int in_port_t;
 #define CRYPTO_LIB "libcrypto.dylib"
 #else
 #if !defined(SSL_LIB)
-
-#if defined(OPENSSL_API_3_0)
 #define SSL_LIB "libssl.so.3"
-#define CRYPTO_LIB "libcrypto.so.3"
-#else
-#define SSL_LIB "libssl.so"
-#define CRYPTO_LIB "libcrypto.so"
 #endif
-
+#if !defined(CRYPTO_LIB)
+#define CRYPTO_LIB "libcrypto.so.3"
 #endif
 #endif
 #if !defined(O_BINARY)
@@ -1540,18 +1525,13 @@ static void mg_snprintf(const struct mg_connection *conn,
 static int mg_init_library_called = 0;
 
 #if !defined(NO_SSL)
-#if defined(OPENSSL_API_1_1) || defined(OPENSSL_API_3_0)
+#if defined(OPENSSL_API_3_0)
 static int mg_openssl_initialized = 0;
 #endif
-#if !defined(OPENSSL_API_1_1) && !defined(OPENSSL_API_3_0)                     \
-    && !defined(USE_MBEDTLS)
+#if !defined(OPENSSL_API_3_0) && !defined(USE_MBEDTLS)
 #error "Please define OPENSSL_API_#_# or USE_MBEDTLS"
 #endif
-#if defined(OPENSSL_API_1_1) && defined(OPENSSL_API_3_0)
-#error "Multiple OPENSSL_API versions defined"
-#endif
-#if (defined(OPENSSL_API_1_1) || defined(OPENSSL_API_3_0))                     \
-    && defined(USE_MBEDTLS)
+#if defined(OPENSSL_API_3_0) && defined(USE_MBEDTLS)
 #error "Multiple SSL libraries defined"
 #endif
 #endif
@@ -1767,13 +1747,7 @@ typedef struct SSL_CTX SSL_CTX;
 #define OPENSSL_API_3_0
 #endif
 #else
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-#if !defined(OPENSSL_API_1_1)
-#define OPENSSL_API_1_1
-#endif
-#else
 #error "Unsupported OPENSSL_VERSION_NUMBER"
-#endif
 #endif
 
 
@@ -2114,7 +2088,13 @@ static const struct mg_option config_options[] = {
     {"protect_uri", MG_CONFIG_TYPE_STRING_LIST, NULL},
     {"authentication_domain", MG_CONFIG_TYPE_STRING, "mydomain.com"},
     {"enable_auth_domain_check", MG_CONFIG_TYPE_BOOLEAN, "yes"},
-    {"ssi_pattern", MG_CONFIG_TYPE_EXT_PATTERN, "**.shtml$|**.shtm$"},
+    {"ssi_pattern",
+     MG_CONFIG_TYPE_EXT_PATTERN,
+#if defined(NO_SSI)
+     ""},
+#else
+     "**.shtml$|**.shtm$"},
+#endif
     {"enable_directory_listing", MG_CONFIG_TYPE_BOOLEAN, "yes"},
     {"enable_webdav", MG_CONFIG_TYPE_BOOLEAN, "no"},
     {"global_auth_file", MG_CONFIG_TYPE_FILE, NULL},
@@ -2152,7 +2132,13 @@ static const struct mg_option config_options[] = {
 #if defined(USE_LUA)
     {"lua_preload_file", MG_CONFIG_TYPE_FILE, NULL},
     {"lua_script_pattern", MG_CONFIG_TYPE_EXT_PATTERN, "**.lua$"},
-    {"lua_server_page_pattern", MG_CONFIG_TYPE_EXT_PATTERN, "**.lp$|**.lsp$"},
+    {"lua_server_page_pattern",
+     MG_CONFIG_TYPE_EXT_PATTERN,
+#if defined(NO_LUA_SERVER_PAGE)
+     ""},
+#else
+     "**.lp$|**.lsp$"},
+#endif
 #if defined(MG_EXPERIMENTAL_INTERFACES)
     {"lua_debug", MG_CONFIG_TYPE_STRING, NULL},
 #endif
@@ -6712,6 +6698,18 @@ mg_read(struct mg_connection *conn, void *buf, size_t len)
 					break;
 				}
 
+				/* The chunk size comes from the peer. A value that does not
+				 * fit into the rest of the int64_t range either overflows
+				 * content_len or, cast to int64_t, makes it negative, which
+				 * mg_read_inner() takes as "read until the connection is
+				 * closed". Compare as uint64_t: unsigned long may be 32 bit.
+				 * Here content_len == consumed_content >= 0. */
+				if ((uint64_t)chunkSize
+				    > (uint64_t)(INT64_MAX - conn->content_len)) {
+					conn->is_chunked = 2;
+					return -1;
+				}
+
 				/* append a new chunk */
 				conn->content_len += (int64_t)chunkSize;
 			}
@@ -9749,7 +9747,7 @@ scan_directory(struct mg_connection *conn,
 #endif /* NO_FILESYSTEMS */
 
 
-#if !defined(NO_FILES)
+#if !defined(NO_BUILTIN_PUT_DELETE_METHODS) && !defined(NO_FILES)
 static int
 remove_directory(struct mg_connection *conn, const char *dir)
 {
@@ -10958,6 +10956,13 @@ parse_http_request(char *buf, int len, struct mg_request_info *ri)
 		/* Error while parsing headers */
 		return -1;
 	}
+	if ((ri->num_headers == (int)MG_MAX_HEADERS) && (*buf != '\r')
+	    && (*buf != '\n') && (*buf != '\0')) {
+		/* More than MG_MAX_HEADERS headers. Do not silently drop the
+		 * rest: a dropped Content-Length or Transfer-Encoding would
+		 * change the request framing. */
+		return -1;
+	}
 
 	return request_length + init_skip;
 }
@@ -11878,7 +11883,7 @@ done:
 #endif /* !NO_CGI */
 
 
-#if !defined(NO_FILES)
+#if !defined(NO_BUILTIN_PUT_DELETE_METHODS) && !defined(NO_FILES)
 static void
 dav_mkcol(struct mg_connection *conn, const char *path)
 {
@@ -12314,10 +12319,10 @@ delete_file(struct mg_connection *conn, const char *path)
 		                   strerror(ERRNO));
 	}
 }
-#endif /* !NO_FILES */
+#endif /* !NO_BUILTIN_PUT_DELETE_METHODS && !NO_FILES */
 
 
-#if !defined(NO_FILESYSTEMS)
+#if !defined(NO_SSI) && !defined(NO_FILESYSTEMS)
 static void
 send_ssi_file(struct mg_connection *, const char *, struct mg_file *, int);
 
@@ -12592,7 +12597,7 @@ handle_ssi_file_request(struct mg_connection *conn,
 		(void)mg_fclose(&filep->access); /* Ignore errors for readonly files */
 	}
 }
-#endif /* NO_FILESYSTEMS */
+#endif /* !NO_SSI && !NO_FILESYSTEMS */
 
 
 #if !defined(NO_FILES)
@@ -12766,6 +12771,7 @@ handle_propfind(struct mg_connection *conn,
 }
 
 
+#if !defined(NO_BUILTIN_PUT_DELETE_METHODS)
 static void
 dav_lock_file(struct mg_connection *conn, const char *path)
 {
@@ -12961,7 +12967,8 @@ dav_proppatch(struct mg_connection *conn, const char *path)
 	          "Forbidden</d:status></d:propstat>\n");
 	mg_printf(conn, "%s\n", "</d:response></d:multistatus>");
 }
-#endif
+#endif /* !NO_BUILTIN_PUT_DELETE_METHODS */
+#endif /* !NO_FILES */
 
 
 CIVETWEB_API void
@@ -15112,6 +15119,7 @@ handle_request(struct mg_connection *conn)
 	/* 11. Handle put/delete/mkcol requests */
 	if (is_put_or_delete_request) {
 		HTTP1_only;
+#if !defined(NO_BUILTIN_PUT_DELETE_METHODS)
 		/* 11.1. PUT method */
 		if (!strcmp(ri->request_method, "PUT")) {
 			put_file(conn, path);
@@ -15175,8 +15183,9 @@ handle_request(struct mg_connection *conn)
 			            path);
 			return;
 		}
-		/* 11.8. Other methods, e.g.: PATCH
-		 * This method is not supported for static resources,
+#endif /* !NO_BUILTIN_PUT_DELETE_METHODS */
+
+		/* 11.8. This method is not supported for static resources,
 		 * only for scripts (Lua, CGI) and callbacks. */
 		mg_send_http_error(conn,
 		                   405,
@@ -15339,11 +15348,14 @@ handle_file_based_request(struct mg_connection *conn,
 	if (match_prefix_strlen(conn->dom_ctx->config[LUA_SERVER_PAGE_EXTENSIONS],
 	                        path)
 	    > 0) {
+#if !defined(NO_LUA_SERVER_PAGE)
 		if (is_in_script_path(conn, path)) {
 			/* Lua server page: an SSI like page containing mostly plain
 			 * html code plus some tags with server generated contents. */
 			handle_lsp_request(conn, path, file, NULL);
-		} else {
+		} else
+#endif
+		{
 			/* Script was in an illegal path */
 			mg_send_http_error(conn, 403, "%s", "Forbidden");
 		}
@@ -15402,9 +15414,12 @@ handle_file_based_request(struct mg_connection *conn,
 #endif /* !NO_CGI */
 
 	if (match_prefix_strlen(conn->dom_ctx->config[SSI_EXTENSIONS], path) > 0) {
+#if !defined(NO_SSI)
 		if (is_in_script_path(conn, path)) {
 			handle_ssi_file_request(conn, path, file);
-		} else {
+		} else
+#endif
+		{
 			/* Script was in an illegal path */
 			mg_send_http_error(conn, 403, "%s", "Forbidden");
 		}
@@ -16883,8 +16898,6 @@ static unsigned long
 ssl_get_protocol(int version_id)
 {
 	long unsigned ret = (long unsigned)SSL_OP_ALL;
-	if (version_id > 0)
-		ret |= SSL_OP_NO_SSLv2;
 	if (version_id > 1)
 		ret |= SSL_OP_NO_SSLv3;
 	if (version_id > 2)
@@ -16893,10 +16906,8 @@ ssl_get_protocol(int version_id)
 		ret |= SSL_OP_NO_TLSv1_1;
 	if (version_id > 4)
 		ret |= SSL_OP_NO_TLSv1_2;
-#if defined(SSL_OP_NO_TLSv1_3)
 	if (version_id > 5)
 		ret |= SSL_OP_NO_TLSv1_3;
-#endif
 	return ret;
 }
 
@@ -17128,20 +17139,13 @@ init_ssl_ctx_impl(struct mg_context *phys_ctx,
 	}
 #endif
 
-#if defined(SSL_OP_NO_TLSv1_3)
 	SSL_CTX_clear_options(dom_ctx->ssl_ctx,
-	                      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1
+	                      SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1
 	                          | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2
 	                          | SSL_OP_NO_TLSv1_3);
-#else
-	SSL_CTX_clear_options(dom_ctx->ssl_ctx,
-	                      SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1
-	                          | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2);
-#endif
 
 	protocol_ver = atoi(dom_ctx->config[SSL_PROTOCOL_VERSION]);
 	SSL_CTX_set_options(dom_ctx->ssl_ctx, ssl_get_protocol(protocol_ver));
-	SSL_CTX_set_options(dom_ctx->ssl_ctx, SSL_OP_SINGLE_DH_USE);
 	SSL_CTX_set_options(dom_ctx->ssl_ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
 	SSL_CTX_set_options(dom_ctx->ssl_ctx,
 	                    SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
@@ -19327,14 +19331,16 @@ process_new_connection(struct mg_connection *conn)
 		             && ((conn->is_chunked == 4)
 		                 || (!conn->is_chunked
 		                     && ((conn->consumed_content == conn->content_len)
-		                         || ((conn->request_len + conn->content_len)
-		                             <= conn->data_len))))
+		                         || (conn->content_len
+		                             <= (int64_t)(conn->data_len
+		                                          - conn->request_len)))))
 		             && (conn->protocol_type == PROTOCOL_TYPE_HTTP1);
 
 		if (keep_alive) {
 			/* Discard all buffered data for this request */
 			discard_len =
-			    ((conn->request_len + conn->content_len) < conn->data_len)
+			    (conn->content_len
+			     < (int64_t)(conn->data_len - conn->request_len))
 			        ? (int)(conn->request_len + conn->content_len)
 			        : conn->data_len;
 			conn->data_len -= discard_len;
@@ -22277,7 +22283,7 @@ mg_init_library(unsigned features)
 	lua_init_optional_libraries();
 #endif
 
-#if (defined(OPENSSL_API_1_1) || defined(OPENSSL_API_3_0)) && !defined(NO_SSL)
+#if defined(OPENSSL_API_3_0) && !defined(NO_SSL)
 
 	if (features_to_init & MG_FEATURES_SSL) {
 		if (!mg_openssl_initialized) {
@@ -22319,7 +22325,7 @@ mg_exit_library(void)
 
 	mg_init_library_called--;
 	if (mg_init_library_called == 0) {
-#if (defined(OPENSSL_API_1_1) || defined(OPENSSL_API_3_0)) && !defined(NO_SSL)
+#if defined(OPENSSL_API_3_0) && !defined(NO_SSL)
 		if (mg_openssl_initialized) {
 			uninitialize_openssl();
 			mg_openssl_initialized = 0;

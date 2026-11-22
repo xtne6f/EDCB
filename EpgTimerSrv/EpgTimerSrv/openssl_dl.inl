@@ -42,15 +42,20 @@ typedef struct x509 X509;
 #define SSL_VERIFY_FAIL_IF_NO_PEER_CERT (2)
 #define SSL_VERIFY_CLIENT_ONCE (4)
 
-#define SSL_OP_ALL (0x80000BFFul)
+#define SSL_OP_TLSEXT_PADDING 0x00000010ul
+#define SSL_OP_SAFARI_ECDHE_ECDSA_BUG 0x00000040ul
+#define SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS 0x00000800ul
+#define SSL_OP_CRYPTOPRO_TLSEXT_BUG 0x80000000ul
 
-#define SSL_OP_NO_SSLv2 (0x01000000ul)
+#define SSL_OP_ALL                                                             \
+    (SSL_OP_CRYPTOPRO_TLSEXT_BUG | SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS          \
+     | SSL_OP_TLSEXT_PADDING | SSL_OP_SAFARI_ECDHE_ECDSA_BUG)
+
 #define SSL_OP_NO_SSLv3 (0x02000000ul)
 #define SSL_OP_NO_TLSv1 (0x04000000ul)
 #define SSL_OP_NO_TLSv1_2 (0x08000000ul)
 #define SSL_OP_NO_TLSv1_1 (0x10000000ul)
 #define SSL_OP_NO_TLSv1_3 (0x20000000ul)
-#define SSL_OP_SINGLE_DH_USE (0x00100000ul)
 #define SSL_OP_CIPHER_SERVER_PREFERENCE (0x00400000ul)
 #define SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION (0x00010000ul)
 #define SSL_OP_NO_COMPRESSION (0x00020000ul)
@@ -94,8 +99,7 @@ struct ssl_func {
 };
 
 
-#if (defined(OPENSSL_API_1_1) || defined(OPENSSL_API_3_0))                     \
-    && !defined(NO_SSL_DL)
+#if defined(OPENSSL_API_3_0) && !defined(NO_SSL_DL)
 
 #define SSL_free (*(void (*)(SSL *))ssl_sw[0].ptr)
 #define SSL_accept (*(int (*)(SSL *))ssl_sw[1].ptr)
