@@ -1,10 +1,12 @@
 post=nil
-if mg.request_info.request_method=='POST' then
+--SOAP要求は小さいので、大きすぎる要求は読まない(認証がないので誰でも送れる)
+local POST_MAX_BYTE=1024*1024
+if mg.request_info.request_method=='POST' and (mg.request_info.content_length or 0)<=POST_MAX_BYTE then
   post=''
   repeat
     s=mg.read()
     post=post..(s or '')
-  until not s
+  until not s or #post>POST_MAX_BYTE
   if #post~=mg.request_info.content_length then
     post=nil
   end
