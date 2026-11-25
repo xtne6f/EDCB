@@ -39,8 +39,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			GetSystemTimeAsFileTime(&ftNow);
 			LONGLONG t = ft.dwLowDateTime | static_cast<LONGLONG>(ft.dwHighDateTime) << 32;
 			LONGLONG tNow = ftNow.dwLowDateTime | static_cast<LONGLONG>(ftNow.dwHighDateTime) << 32;
-			// 激変禁止(24時間)
-			if (tNow - 24 * 3600 * 1000000LL < t && t < tNow + 24 * 3600 * 10000000LL) {
+			// 激変禁止(前後24時間。FILETIMEは100ナノ秒単位)
+			if (tNow - 24 * 3600 * 10000000LL < t && t < tNow + 24 * 3600 * 10000000LL) {
 				SYSTEMTIME st;
 				if (FileTimeToSystemTime(&ft, &st) && SetSystemTime(&st)) {
 					// 安全のため30秒間は再設定を拒否する
