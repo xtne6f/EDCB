@@ -9,6 +9,36 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+extern char** environ;
+
+namespace
+{
+//現在の環境変数にvarsを加えたexecve()用の一覧を作る。既存の変数は上書きしない(setenv(name,value,0)と同じ)
+vector<string> CreateExecEnvironment(const vector<pair<string, string>>& vars)
+{
+	vector<string> envList;
+	for( char** e = environ; e && *e; e++ ){
+		envList.push_back(*e);
+	}
+	for( const auto& v : vars ){
+		if( v.first.empty() || v.first.find('=') != string::npos ){
+			continue;
+		}
+		bool exists = false;
+		for( const string& s : envList ){
+			if( s.size() > v.first.size() && s[v.first.size()] == '=' && s.compare(0, v.first.size(), v.first) == 0 ){
+				exists = true;
+				break;
+			}
+		}
+		if( exists == false ){
+			envList.push_back(v.first + '=' + v.second);
+		}
+	}
+	return envList;
+}
+}
 #endif
 
 CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR name)
@@ -259,22 +289,29 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 					WtoUTF8(work.batFilePath, execPath);
 					string execDir;
 					WtoUTF8(fs_path(work.batFilePath).parent_path().native(), execDir);
-					vector<string> macroValList(work.macroList.size());
-					for( size_t i = 0; i < macroValList.size(); i++ ){
-						WtoUTF8(work.macroList[i].second, macroValList[i]);
+					vector<pair<string, string>> vars(work.macroList.size());
+					for( size_t i = 0; i < vars.size(); i++ ){
+						vars[i].first = work.macroList[i].first;
+						WtoUTF8(work.macroList[i].second, vars[i].second);
 					}
+					//fork()後の子では非同期シグナル安全でない関数(メモリ確保を伴うsetenv()など)を呼べないので、ここで準備する
+					vector<string> envList = CreateExecEnvironment(vars);
+					vector<char*> envp;
+					for( string& s : envList ){
+						envp.push_back(&s[0]);
+					}
+					envp.push_back(nullptr);
+					char* const argv[] = { &execPath[0], nullptr };
 					pid_t pid = fork();
 					if( pid == 0 ){
 						//シグナルマスクを初期化
 						sigset_t sset;
 						sigemptyset(&sset);
 						if( pthread_sigmask(SIG_SETMASK, &sset, nullptr) == 0 && chdir(execDir.c_str()) == 0 ){
-							for( size_t i = 0; i < macroValList.size(); i++ ){
-								setenv(work.macroList[i].first.c_str(), macroValList[i].c_str(), 0);
-							}
-							execl(execPath.c_str(), execPath.c_str(), nullptr);
+							execve(execPath.c_str(), argv, envp.data());
 						}
-						exit(EXIT_FAILURE);
+						//親の終了処理を実行しないよう_exit()で抜ける
+						_exit(EXIT_FAILURE);
 					}
 					if( pid != -1 ){
 						//終了監視(効率よい手法はないものか…)

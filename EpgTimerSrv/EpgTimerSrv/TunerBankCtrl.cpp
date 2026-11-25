@@ -1246,7 +1246,8 @@ bool CTunerBankCtrl::OpenTuner(bool minWake, bool noView, bool nwUdp, bool nwTcp
 		if( pthread_sigmask(SIG_SETMASK, &sset, nullptr) == 0 ){
 			execv(execU.c_str(), argv.data());
 		}
-		exit(EXIT_FAILURE);
+		//親の終了処理を実行しないよう_exit()で抜ける
+		_exit(EXIT_FAILURE);
 	}else if( pid != -1 ){
 		this->tunerPid = (DWORD)pid;
 	}
