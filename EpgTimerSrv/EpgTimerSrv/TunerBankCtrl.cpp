@@ -8,10 +8,24 @@
 #include "../../Common/IniUtil.h"
 #include <tlhelp32.h>
 #else
+#include <errno.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
+
+namespace
+{
+#ifndef _WIN32
+//自分の子とは限らないプロセスがまだ存在するかどうか
+bool IsOtherProcessAlive(DWORD pid)
+{
+	//子プロセスなら回収する。子でなければwaitpid()は失敗するのでkill()で調べる
+	pid_t ret = waitpid((pid_t)pid, nullptr, WNOHANG);
+	return ret == 0 || (ret < 0 && errno == ECHILD && kill((pid_t)pid, 0) == 0);
+}
+#endif
+}
 
 CTunerBankCtrl::CTunerBankCtrl(DWORD tunerID_, LPCWSTR bonFileName_, WORD epgCapMax, const map<DWORD, CH_DATA4>& chMap_, CNotifyManager& notifyManager_, CEpgDBManager& epgDBManager_)
 	: tunerID(tunerID_)
@@ -1396,7 +1410,7 @@ bool CTunerBankCtrl::CloseOtherTuner()
 #ifdef _WIN32
 					WaitForSingleObject(this->hTunerProcess, 10000);
 #else
-					for( int timeout = 10000; timeout > 0 && waitpid(this->tunerPid, nullptr, WNOHANG) == 0; timeout -= 10 ){
+					for( int timeout = 10000; timeout > 0 && IsOtherProcessAlive(this->tunerPid); timeout -= 10 ){
 						SleepForMsec(10);
 					}
 #endif
