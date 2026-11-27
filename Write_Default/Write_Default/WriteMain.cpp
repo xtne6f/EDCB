@@ -10,6 +10,8 @@
 #include <poll.h>
 #include <signal.h>
 #include <unistd.h>
+
+extern char** environ;
 #endif
 
 CWriteMain::CWriteMain(void)
@@ -304,6 +306,26 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 	string filePath;
 	WtoUTF8(sys->savePath, filePath);
 
+	//fork()後の子では非同期シグナル安全でない関数(メモリ確保を伴うsetenv()など)を呼べないので、ここで準備する
+	//既存のFilePathは上書きしない(setenv("FilePath",value,0)と同じ)
+	vector<string> envList;
+	bool hasFilePath = false;
+	for( char** e = environ; e && *e; e++ ){
+		envList.push_back(*e);
+		hasFilePath = hasFilePath || envList.back().compare(0, 9, "FilePath=") == 0;
+	}
+	if( hasFilePath == false ){
+		envList.push_back("FilePath=" + filePath);
+	}
+	vector<char*> envp;
+	for( string& s : envList ){
+		envp.push_back(&s[0]);
+	}
+	envp.push_back(nullptr);
+	char shName[] = "sh";
+	char shOpt[] = "-c";
+	char* const argv[] = { shName, shOpt, &cmd[0], nullptr };
+
 	int fd[2];
 	if( pipe2(fd, O_CLOEXEC) == 0 ){
 		pid_t pid = fork();
@@ -317,10 +339,10 @@ void CWriteMain::TeeThread(CWriteMain* sys)
 			sigset_t sset;
 			sigemptyset(&sset);
 			if( pthread_sigmask(SIG_SETMASK, &sset, nullptr) == 0 && chdir(execDir.c_str()) == 0 ){
-				setenv("FilePath", filePath.c_str(), 0);
-				execl("/bin/sh", "sh", "-c", cmd.c_str(), nullptr);
+				execve("/bin/sh", argv, envp.data());
 			}
-			exit(EXIT_FAILURE);
+			//親の終了処理を実行しないよう_exit()で抜ける
+			_exit(EXIT_FAILURE);
 		}
 		close(fd[0]);
 		if( pid != -1 && fcntl(fd[1], F_SETFL, O_NONBLOCK) != -1 ){

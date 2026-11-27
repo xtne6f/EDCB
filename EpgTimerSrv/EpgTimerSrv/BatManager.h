@@ -43,6 +43,7 @@ protected:
 	bool CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& exNotifyInterval, WORD& exSW, bool& exDirect, vector<char>& buff) const;
 #ifdef _WIN32
 	static wstring CreateEnvironment(const BAT_WORK_INFO& info);
+#else
+	static string CreateEnvironment(const BAT_WORK_INFO& info);
 #endif
 };
-

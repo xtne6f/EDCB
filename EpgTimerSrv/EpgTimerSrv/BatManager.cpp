@@ -9,6 +9,8 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+extern char** environ;
 #endif
 
 CBatManager::CBatManager(CNotifyManager& notifyManager_, LPCWSTR name)
@@ -255,26 +257,28 @@ void CBatManager::BatWorkThread(CBatManager* sys)
 						CloseHandle(hProcess);
 					}
 #else
+					//fork()後の子では非同期シグナル安全でない関数(メモリ確保を伴うsetenv()など)を呼べないので、ここで準備する
 					string execPath;
 					WtoUTF8(work.batFilePath, execPath);
 					string execDir;
 					WtoUTF8(fs_path(work.batFilePath).parent_path().native(), execDir);
-					vector<string> macroValList(work.macroList.size());
-					for( size_t i = 0; i < macroValList.size(); i++ ){
-						WtoUTF8(work.macroList[i].second, macroValList[i]);
+					string strEnv = CreateEnvironment(work);
+					vector<char*> envp;
+					for( size_t i = 0; i < strEnv.size(); i = strEnv.find_first_of('\0', i) + 1 ){
+						envp.push_back(&strEnv[i]);
 					}
+					envp.push_back(nullptr);
+					char* const argv[] = { &execPath[0], nullptr };
 					pid_t pid = fork();
 					if( pid == 0 ){
 						//シグナルマスクを初期化
 						sigset_t sset;
 						sigemptyset(&sset);
 						if( pthread_sigmask(SIG_SETMASK, &sset, nullptr) == 0 && chdir(execDir.c_str()) == 0 ){
-							for( size_t i = 0; i < macroValList.size(); i++ ){
-								setenv(work.macroList[i].first.c_str(), macroValList[i].c_str(), 0);
-							}
-							execl(execPath.c_str(), execPath.c_str(), nullptr);
+							execve(execPath.c_str(), argv, envp.data());
 						}
-						exit(EXIT_FAILURE);
+						//親の終了処理を実行しないよう_exit()で抜ける
+						_exit(EXIT_FAILURE);
 					}
 					if( pid != -1 ){
 						//終了監視(効率よい手法はないものか…)
@@ -443,7 +447,12 @@ bool CBatManager::CreateBatFile(BAT_WORK_INFO& info, DWORD& exBatMargin, DWORD& 
 
 #ifdef _WIN32
 wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
+#else
+string CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
+#endif
 {
+	//環境変数の二重ヌル終端文字列を取得
+#ifdef _WIN32
 	wstring strEnv;
 	LPWCH env = GetEnvironmentStrings();
 	if( env ){
@@ -451,27 +460,49 @@ wstring CBatManager::CreateEnvironment(const BAT_WORK_INFO& info)
 		while( env[n] ){
 			n += wcslen(env + n) + 1;
 		}
-		strEnv.assign(env, env + n);
+		strEnv.assign(env, n);
 		FreeEnvironmentStrings(env);
 	}
-	for( size_t i = 0; i < info.macroList.size(); i++ ){
+#else
+	string strEnv;
+	for( char** e = environ; e && *e; e++ ){
+		strEnv.append(*e, strlen(*e) + 1);
+	}
+#endif
+
+	for( const auto& macro : info.macroList ){
+		if( macro.first.empty() || macro.first.find('=') != string::npos ){
+			continue;
+		}
+#ifdef _WIN32
+		static const wchar_t delims[] = L"=";
+		const wstring& strVal = macro.second;
 		wstring strVar;
-		UTF8toW(info.macroList[i].first, strVar);
+		UTF8toW(macro.first, strVar);
+#else
+		static const char delims[] = "=";
+		const string& strVar = macro.first;
+		string strVal;
+		WtoUTF8(macro.second, strVal);
+#endif
 		//競合する変数がなければ追加
 		bool unique = true;
 		for( size_t n = 0; unique && n < strEnv.size(); ){
-			size_t m = strEnv.find_first_of(L'\0', n);
-			if( m - n > strVar.size() && strEnv[n + strVar.size()] == L'=' ){
-				strEnv[n + strVar.size()] = L'\0';
+			size_t m = strEnv.find_first_of(delims[1], n);
+			if( m - n > strVar.size() && strEnv[n + strVar.size()] == delims[0] ){
+				strEnv[n + strVar.size()] = delims[1];
+#ifdef _WIN32
 				unique = CompareNoCase(strVar, strEnv.c_str() + n) != 0;
-				strEnv[n + strVar.size()] = L'=';
+#else
+				unique = strVar != strEnv.c_str() + n;
+#endif
+				strEnv[n + strVar.size()] = delims[0];
 			}
 			n = m + 1;
 		}
 		if( unique ){
-			strEnv += strVar + L'=' + info.macroList[i].second + L'\0';
+			strEnv += strVar + delims[0] + strVal + delims[1];
 		}
 	}
 	return strEnv;
 }
-#endif

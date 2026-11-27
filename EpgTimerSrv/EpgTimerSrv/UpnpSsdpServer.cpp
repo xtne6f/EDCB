@@ -72,7 +72,8 @@ vector<SSDP_NIC_INFO> GetNICList()
 	if( getifaddrs(&ifap) == 0 ){
 		for( ifaddrs* p = ifap; p; p = p->ifa_next ){
 			char host[NI_MAXHOST];
-			if( p->ifa_addr->sa_family == AF_INET &&
+			//アドレスを持たないインタフェース(tunなど)ではifa_addrがnullptrになる
+			if( p->ifa_addr && p->ifa_addr->sa_family == AF_INET &&
 			    getnameinfo(p->ifa_addr, sizeof(sockaddr_in), host, sizeof(host), nullptr, 0, NI_NUMERICHOST) == 0 ){
 				nicList.emplace_back();
 				nicList.back().addr = *(sockaddr_in*)p->ifa_addr;
