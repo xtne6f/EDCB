@@ -40,14 +40,14 @@ namespace EpgTimer
         private Dictionary<uint, string> logoNames;
         private int logoNamesLoadedCount;
 
-        Dictionary<UInt64, EpgServiceAllEventInfo> serviceEventList = new Dictionary<UInt64, EpgServiceAllEventInfo>();
-        Dictionary<UInt32, ReserveData> reserveList = new Dictionary<UInt32, ReserveData>();
-        Dictionary<UInt32, TunerReserveInfo> tunerReserveList = new Dictionary<UInt32, TunerReserveInfo>();
-        Dictionary<UInt32, RecFileInfo> recFileInfo = new Dictionary<UInt32, RecFileInfo>();
-        Dictionary<UInt32, ManualAutoAddData> manualAutoAddList = new Dictionary<UInt32, ManualAutoAddData>();
-        Dictionary<UInt32, EpgAutoAddData> epgAutoAddList = new Dictionary<UInt32, EpgAutoAddData>();
+        Dictionary<ulong, EpgServiceAllEventInfo> serviceEventList = new Dictionary<ulong, EpgServiceAllEventInfo>();
+        Dictionary<uint, ReserveData> reserveList = new Dictionary<uint, ReserveData>();
+        Dictionary<uint, TunerReserveInfo> tunerReserveList = new Dictionary<uint, TunerReserveInfo>();
+        Dictionary<uint, RecFileInfo> recFileInfo = new Dictionary<uint, RecFileInfo>();
+        Dictionary<uint, ManualAutoAddData> manualAutoAddList = new Dictionary<uint, ManualAutoAddData>();
+        Dictionary<uint, EpgAutoAddData> epgAutoAddList = new Dictionary<uint, EpgAutoAddData>();
 
-        public Dictionary<UInt64, EpgServiceAllEventInfo> ServiceEventList
+        public Dictionary<ulong, EpgServiceAllEventInfo> ServiceEventList
         {
             get { return serviceEventList; }
         }
@@ -67,11 +67,11 @@ namespace EpgTimer
             get;
             private set;
         }
-        public Dictionary<UInt32, ReserveData> ReserveList
+        public Dictionary<uint, ReserveData> ReserveList
         {
             get { return reserveList; }
         }
-        public Dictionary<UInt32, TunerReserveInfo> TunerReserveList
+        public Dictionary<uint, TunerReserveInfo> TunerReserveList
         {
             get { return tunerReserveList; }
         }
@@ -88,15 +88,15 @@ namespace EpgTimer
                 return DefaultRecSetting == null || DefaultRecSetting.IsNoRec() == false;
             }
         }
-        public Dictionary<UInt32, RecFileInfo> RecFileInfo
+        public Dictionary<uint, RecFileInfo> RecFileInfo
         {
             get { return recFileInfo; }
         }
-        public Dictionary<UInt32, ManualAutoAddData> ManualAutoAddList
+        public Dictionary<uint, ManualAutoAddData> ManualAutoAddList
         {
             get { return manualAutoAddList; }
         }
-        public Dictionary<UInt32, EpgAutoAddData> EpgAutoAddList
+        public Dictionary<uint, EpgAutoAddData> EpgAutoAddList
         {
             get { return epgAutoAddList; }
         }
@@ -874,6 +874,14 @@ namespace EpgTimer
                                          .Aggregate((a, b) => a.StartTime <= b.StartTime ? a : b);
             }
             return null;
+        }
+
+        /// <summary>
+        /// 無効状態と録画モード情報とを組み合わせた値を返す。結果はサーバーの対応状況による
+        /// </summary>
+        public byte CombineRecModeAndNoRec(byte recMode, bool noRec)
+        {
+            return noRec ? (byte)(FixNoRecToServiceOnly ? 5 : 5 + (recMode + 4) % 5) : recMode;
         }
     }
 }

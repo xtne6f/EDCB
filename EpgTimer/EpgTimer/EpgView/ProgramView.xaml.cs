@@ -57,6 +57,7 @@ namespace EpgTimer.EpgView
                 if (LeftDoubleClick != null)
                 {
                     LeftDoubleClick(sender, lastPopupPos);
+                    e.Handled = true;
                 }
             }
             else if (EpgSetting.EpgInfoSingleClick)
@@ -110,7 +111,7 @@ namespace EpgTimer.EpgView
                                 {
                                     break;
                                 }
-                                String viewTip = "";
+                                string viewTip = "";
 
                                 if (info != null)
                                 {
@@ -515,6 +516,7 @@ namespace EpgTimer.EpgView
                     if (LeftDoubleClick != null)
                     {
                         LeftDoubleClick(sender, cursorPos);
+                        e.Handled = true;
                     }
                 }
             }
@@ -538,6 +540,7 @@ namespace EpgTimer.EpgView
                         if (LeftDoubleClick != null)
                         {
                             LeftDoubleClick(sender, cursorPos);
+                            e.Handled = true;
                         }
                     }
                 }

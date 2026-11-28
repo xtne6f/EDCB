@@ -26,9 +26,31 @@ namespace EpgTimer.Setting
         {
             InitializeComponent();
 
+            foreach (FontFamily family in Fonts.SystemFontFamilies)
+            {
+                string s;
+                if (family.FamilyNames.TryGetValue(System.Windows.Markup.XmlLanguage.GetLanguage("ja-JP"), out s))
+                {
+                    comboBox_appFont.Items.Add(s);
+                }
+                else
+                {
+                    //ローカル名がなくても一応候補に加える
+                    comboBox_appFont.Items.Add(family.Source);
+                }
+            }
+
             checkBox_wakeReconnect.IsEnabled = CommonManager.Instance.NWMode;
             checkBox_suspendClose.IsEnabled = CommonManager.Instance.NWMode;
-            button_srvSetting.IsEnabled = CommonManager.Instance.NWMode == false;
+
+#if NETCOREAPP
+#pragma warning disable WPF0001
+            if (Application.Current.ThemeMode != ThemeMode.None)
+            {
+                checkBox_noStyle.IsEnabled = false;
+            }
+#pragma warning restore WPF0001
+#endif
 
             button_shortCutAdd.Visibility = File.Exists(System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Startup), "EpgTime.lnk")) ? Visibility.Hidden : Visibility.Visible;
@@ -126,6 +148,13 @@ namespace EpgTimer.Setting
             }
         }
 
+        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            popup_btnDel.IsOpen = false;
+            popup_taskDel.IsOpen = false;
+            popup_add_iepg.IsOpen = false;
+        }
+
         private void button_up_Click(object sender, RoutedEventArgs e)
         {
             var listBox = (ListBox)((Button)sender).Tag;
@@ -162,7 +191,8 @@ namespace EpgTimer.Setting
                 {
                     if (listBox_viewTask.Items.OfType<string>().All(a => a != "設定"))
                     {
-                        MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
+                        popup_btnDel.DataContext = "設定は上部表示ボタンか右クリック表示項目のどちらかに必要です";
+                        popup_btnDel.IsOpen = true;
                         return;
                     }
                 }
@@ -188,7 +218,8 @@ namespace EpgTimer.Setting
                 {
                     if (listBox_viewBtn.Items.OfType<string>().All(a => a != "設定"))
                     {
-                        MessageBox.Show("設定は上部表示ボタンか右クリック表示項目のどちらかに必要です");
+                        popup_taskDel.DataContext = "設定は上部表示ボタンか右クリック表示項目のどちらかに必要です";
+                        popup_taskDel.IsOpen = true;
                         return;
                     }
                 }
@@ -208,14 +239,25 @@ namespace EpgTimer.Setting
 
         private void button_recDef_Click(object sender, RoutedEventArgs e)
         {
-            SetDefRecSettingWindow dlg = new SetDefRecSettingWindow();
+            var dlg = new SetDefRecSettingWindow();
+            dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
+            dlg.ShowDialog();
+        }
+
+        private void button_testAppFont_Click(object sender, RoutedEventArgs e)
+        {
+            var style = new Style(typeof(Window), (Style)FindResource("AppWindowStyle"));
+            style.Setters.Add(new Setter(FontFamilyProperty, new FontFamily(((Settings)DataContext).AppFontName)));
+            style.Setters.Add(new Setter(FontSizeProperty, ((Settings)DataContext).AppFontSize));
+            var dlg = new SetDefRecSettingWindow();
+            dlg.Style = style;
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.ShowDialog();
         }
 
         private void button_searchDef_Click(object sender, RoutedEventArgs e)
         {
-            SetDefSearchSettingWindow dlg = new SetDefSearchSettingWindow();
+            var dlg = new SetDefSearchSettingWindow();
             dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
             dlg.SetDefSetting(((Settings)DataContext).CreateDefSearchSetting());
 
@@ -284,26 +326,6 @@ namespace EpgTimer.Setting
             }
         }
 
-        private void button_srvSetting_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (CommonManager.Instance.SrvSettingProcess == null || CommonManager.Instance.SrvSettingProcess.HasExited)
-                {
-                    CommonManager.Instance.SrvSettingProcess =
-                        System.Diagnostics.Process.Start(System.IO.Path.Combine(SettingPath.ModulePath, "EpgTimerSrv.exe"), "/setting");
-                }
-                else
-                {
-                    CommonUtil.SetForegroundWindow(CommonManager.Instance.SrvSettingProcess.MainWindowHandle);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
-        }
-
         /// <summary>
         /// ショートカットの作成
         /// </summary>
@@ -311,7 +333,7 @@ namespace EpgTimer.Setting
         /// <param name="path">出力先のファイル名(*.lnk)</param>
         /// <param name="targetPath">対象のアセンブリ(*.exe)</param>
         /// <param name="description">説明</param>
-        private void CreateShortCut(String path, String targetPath, String description)
+        private void CreateShortCut(string path, string targetPath, string description)
         {
             //using System.Reflection;
 
@@ -384,7 +406,8 @@ namespace EpgTimer.Setting
                     if (string.Compare(info.StationName, textBox_station.Text, new System.Globalization.CultureInfo("ja-JP"),
                                        System.Globalization.CompareOptions.IgnoreWidth | System.Globalization.CompareOptions.IgnoreCase) == 0)
                     {
-                        MessageBox.Show("すでに登録済みです");
+                        popup_add_iepg.DataContext = "すでに登録済みです";
+                        popup_add_iepg.IsOpen = true;
                         return;
                     }
                 }

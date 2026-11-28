@@ -29,18 +29,18 @@ namespace EpgTimer
             Title = s.Length > 1 ? s[1] : "";
             LogText = s.Length > 2 ? s[2].TrimStart(' ') : "";
         }
-        public String Time
+        public string Time
         {
             get;
             private set;
         }
-        public String Title
+        public string Title
         {
             get;
             private set;
         }
 
-        public String LogText
+        public string LogText
         {
             get;
             private set;

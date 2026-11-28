@@ -1,21 +1,43 @@
 ﻿<Window x:Class="EpgTimer.RecInfoDescWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="録画情報" Height="460" Width="660" Loaded="Window_Loaded" WindowStartupLocation="CenterOwner">
+        Height="{StaticResource AppRecInfoDescWindowHeight}" Style="{StaticResource AppWindowStyle}" Title="録画情報" Width="{StaticResource AppRecInfoDescWindowWidth}" WindowStartupLocation="CenterOwner" Loaded="Window_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
     <Grid>
-        <TabControl Margin="0,0,0,70">
-            <TabItem Header="番組情報" Name="tabItem_pgInfo">
-                <RichTextBox IsReadOnly="True" Name="richTextBox_pgInfo" VerticalScrollBarVisibility="Auto" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TabControl Name="tabControl">
+            <TabItem Header="番組情報">
+                <RichTextBox IsReadOnly="True" IsReadOnlyCaretVisible="True" Name="richTextBox_pgInfo" Style="{StaticResource AppRichTextBoxStyle}" VerticalScrollBarVisibility="Auto" />
             </TabItem>
-            <TabItem Header="エラーログ" Name="tabItem_errLog">
-                <TextBox FontFamily="Consolas" IsReadOnly="True" Name="textBox_errLog" VerticalScrollBarVisibility="Auto" />
+            <TabItem Header="エラーログ">
+                <TextBox IsReadOnly="True" IsReadOnlyCaretVisible="True" Name="textBox_errLog" Style="{StaticResource AppErrLogTextBoxStyle}" VerticalScrollBarVisibility="Auto" />
             </TabItem>
         </TabControl>
-        <Label Content="ファイル" Height="28" HorizontalAlignment="Left" Margin="5,0,0,39" VerticalAlignment="Bottom" />
-        <TextBox Height="23" Margin="60,0,83,41" Name="textBox_recFilePath" TextChanged="textBox_recFilePath_TextChanged" VerticalAlignment="Bottom" />
-        <Button Click="button_rename_Click" Content="リネーム" Height="23" HorizontalAlignment="Right" IsEnabled="False" Margin="0,0,8,41" Name="button_rename" ToolTip="ファイルが存在すれば同時に移動します。拡張子が付加されたファイルも移動します。" VerticalAlignment="Bottom" Width="67" />
-        <Button Click="button_play_Click" Content="再生" Height="23" HorizontalAlignment="Left" Margin="30,0,0,8" VerticalAlignment="Bottom" Width="80" />
-        <Button Click="button_del_Click" Content="削除" Height="23" HorizontalAlignment="Left" Margin="118,0,0,8" VerticalAlignment="Bottom" Width="80" />
-        <Button Content="キャンセル" Height="23" HorizontalAlignment="Left" IsCancel="True" Margin="206,0,0,8" VerticalAlignment="Bottom" Width="80" />
+        <StackPanel Grid.Row="1" Margin="{StaticResource AppEdgeMarginLRB}">
+            <Grid Margin="{StaticResource AppWideMarginT}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Label Content="ファイル" Style="{StaticResource AppTermLabelStyle}" />
+                <TextBox Grid.Column="1" Name="textBox_recFilePath" Style="{StaticResource AppTextBoxStyle}" TextChanged="textBox_recFilePath_TextChanged" />
+                <Button Content="リネーム" Grid.Column="2" IsEnabled="False" Margin="{StaticResource AppMarginL}" Name="button_rename" Style="{StaticResource AppButtonStyle}" ToolTip="ファイルが存在すれば同時に移動します。拡張子が付加されたファイルも移動します。" Click="button_rename_Click" />
+                <Popup Name="popup_rename" PlacementTarget="{Binding ElementName=button_rename}" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+                    <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+                </Popup>
+            </Grid>
+            <StackPanel Margin="{StaticResource AppEdgeMarginT}" Orientation="Horizontal">
+                <Button Content="再生" Margin="{StaticResource AppConfirmMargin}" Name="button_play" Style="{StaticResource AppConfirmButtonStyle}" Click="button_play_Click" />
+                <Button Content="削除" Margin="{StaticResource AppConfirmMargin}" Style="{StaticResource AppConfirmButtonStyle}" Click="button_del_Click" />
+                <Button Content="キャンセル" Margin="{StaticResource AppConfirmMargin}" Style="{StaticResource AppConfirmButtonStyle}" Click="button_cancel_Click" />
+                <Button Content="番組情報を保存" Margin="{StaticResource AppWideConfirmMargin}" IsEnabled="False" Name="button_save_program" Style="{StaticResource AppConfirmButtonStyle}" Click="button_save_program_Click" />
+                <Popup Name="popup_play" PlacementTarget="{Binding ElementName=button_play}" StaysOpen="False" Style="{StaticResource AppErrorMessagePopupStyle}">
+                    <ContentControl Template="{StaticResource AppErrorMessagePopupTemplate}" />
+                </Popup>
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Window>

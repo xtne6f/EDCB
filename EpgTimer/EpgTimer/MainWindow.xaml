@@ -1,27 +1,26 @@
 ﻿<Window x:Class="EpgTimer.MainWindow"
-TextOptions.TextFormattingMode="Display"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:EpgTimer"
-        Title="EpgTimer" Height="480" Width="640" Loaded="Window_Loaded" Closing="Window_Closing" StateChanged="Window_StateChanged" PreviewDragEnter="Window_PreviewDragEnter" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" AllowDrop="True" FontSize="12">
+        AllowDrop="True" Height="{StaticResource AppMainWindowHeight}" Style="{StaticResource AppWindowStyle}" Title="EpgTimer" Width="{StaticResource AppMainWindowWidth}" Closing="Window_Closing" Loaded="Window_Loaded" PreviewDragEnter="Window_PreviewDragEnter" PreviewDrop="Window_PreviewDrop" PreviewKeyDown="Window_PreviewKeyDown" StateChanged="Window_StateChanged">
     <Grid Name="grid_main">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <StackPanel Margin="2,0,0,0" Name="stackPanel_button" Orientation="Horizontal">
-            <Button Click="settingButton_Click" Content="設定" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="searchButton_Click" Content="検索" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="closeButton_Click" Content="終了" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="standbyButton_Click" Content="スタンバイ" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="suspendButton_Click" Content="休止" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="epgCapButton_Click" Content="EPG取得" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="epgReloadButton_Click" Content="EPG再読み込み" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="custum1Button_Click" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Tag="カスタム１" Visibility="Collapsed" />
-            <Button Click="custum2Button_Click" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Tag="カスタム２" Visibility="Collapsed" />
-            <Button Click="nwTVEndButton_Click" Content="NetworkTV終了" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="logViewButton_Click" Content="情報通知ログ" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
-            <Button Click="connectButton_Click" Content="再接続" Margin="0,2,4,5" MinHeight="23" MinWidth="75" Visibility="Collapsed" />
+        <StackPanel Name="stackPanel_button" Orientation="Horizontal">
+            <Button Content="設定" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="settingButton_Click" />
+            <Button Content="検索" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="searchButton_Click" />
+            <Button Content="終了" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="closeButton_Click" />
+            <Button Content="スタンバイ" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="standbyButton_Click" />
+            <Button Content="休止" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="suspendButton_Click" />
+            <Button Content="EPG取得" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="epgCapButton_Click" />
+            <Button Content="EPG再読み込み" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="epgReloadButton_Click" />
+            <Button Style="{StaticResource AppMainWindowButtonStyle}" Tag="カスタム１" Visibility="Collapsed" Click="custum1Button_Click" />
+            <Button Style="{StaticResource AppMainWindowButtonStyle}" Tag="カスタム２" Visibility="Collapsed" Click="custum2Button_Click" />
+            <Button Content="NetworkTV終了" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="nwTVEndButton_Click" />
+            <Button Content="情報通知ログ" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="logViewButton_Click" />
+            <Button Content="再接続" Style="{StaticResource AppMainWindowButtonStyle}" Visibility="Collapsed" Click="connectButton_Click" />
         </StackPanel>
         <TabControl Name="tabControl_main" Grid.Row="1">
             <TabItem Header="予約一覧" Name="tabItem_reserve">

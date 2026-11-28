@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -19,6 +20,8 @@ namespace EpgTimer
     public partial class ChgReserveWindow : Window
     {
         private ReserveData reserveInfo = null;
+        private EpgEventInfo eventInfo = null;
+        private int pendingMode = 0;
 
         public ChgReserveWindow()
         {
@@ -47,9 +50,21 @@ namespace EpgTimer
             recSettingView.SetViewMode(false);
         }
 
-        public void SetOpenMode(byte mode)
+        public void SetOpenMode(int mode)
         {
-            tabControl.SelectedIndex = mode;
+            if (pendingMode >= 0)
+            {
+                pendingMode = mode == 0 ? 0 : 1;
+            }
+            else
+            {
+                tabControl.SelectedIndex = mode == 0 ? 0 : 1;
+            }
+        }
+
+        public int GetOpenMode()
+        {
+            return pendingMode >= 0 ? pendingMode : tabControl.SelectedIndex == 0 ? 0 : 1;
         }
 
         /// <summary>
@@ -63,10 +78,11 @@ namespace EpgTimer
                 reserveInfo = info;
                 recSettingView.SetDefSetting(info.RecSetting);
 
+                eventInfo = null;
                 if (info.EventID != 0xFFFF)
                 {
-                    EpgEventInfo eventInfo = CommonManager.Instance.DB.GetPgInfo(info.OriginalNetworkID, info.TransportStreamID,
-                                                                                 info.ServiceID, info.EventID, false);
+                    eventInfo = CommonManager.Instance.DB.GetPgInfo(info.OriginalNetworkID, info.TransportStreamID,
+                                                                    info.ServiceID, info.EventID, false);
                     if (eventInfo != null)
                     {
                         richTextBox_descInfo.Document = new FlowDocument(CommonManager.ConvertDisplayText(
@@ -74,8 +90,19 @@ namespace EpgTimer
                             CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicText),
                             CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedText),
                             CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo)));
+#if NETCOREAPP
+#pragma warning disable WPF0001
+                        // (おそらくバグにより)フォントが継承されないため
+                        if (Application.Current.ThemeMode != ThemeMode.None)
+                        {
+                            richTextBox_descInfo.Document.FontFamily = richTextBox_descInfo.FontFamily;
+                            richTextBox_descInfo.Document.FontSize = richTextBox_descInfo.FontSize;
+                        }
+#pragma warning restore WPF0001
+#endif
                     }
                 }
+                button_save_program.IsEnabled = eventInfo != null;
 
                 Title = "予約変更";
                 button_chg_reserve.Content = "変更";
@@ -119,6 +146,18 @@ namespace EpgTimer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // 初期ウィンドウ高さをモード0タブの高さに適応させるため
+            if (SizeToContent != SizeToContent.Manual)
+            {
+                Height = ActualHeight;
+                SizeToContent = SizeToContent.Manual;
+            }
+            if (pendingMode >= 0)
+            {
+                int mode = pendingMode;
+                pendingMode = -1;
+                SetOpenMode(mode);
+            }
             if (tabControl.SelectedItem != null)
             {
                 ((TabItem)tabControl.SelectedItem).Focus();
@@ -210,7 +249,7 @@ namespace EpgTimer
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約追加でエラーが発生しました。");
                 }
             }
-            DialogResult = true;
+            Close();
         }
 
         private void button_del_reserve_Click(object sender, RoutedEventArgs e)
@@ -222,8 +261,17 @@ namespace EpgTimer
                 {
                     MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
                 }
-                DialogResult = true;
+                Close();
             }
+        }
+
+        private void button_save_program_Click(object sender, RoutedEventArgs e)
+        {
+            CommonManager.Instance.ShowSaveProgramTextDialog(
+                CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicInfoForProgramText) +
+                CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.BasicTextForProgramText) +
+                CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.ExtendedTextForProgramText) +
+                CommonManager.ConvertProgramText(eventInfo, EventInfoTextMode.PropertyInfo));
         }
 
         private void checkBox_program_Click(object sender, RoutedEventArgs e)
@@ -249,7 +297,21 @@ namespace EpgTimer
                         break;
                 }
             }
+            else if (Keyboard.Modifiers == ModifierKeys.None)
+            {
+                switch (e.Key)
+                {
+                    case Key.Escape:
+                        Close();
+                        e.Handled = true;
+                        break;
+                }
+            }
         }
 
+        private void button_cancel_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
 }
