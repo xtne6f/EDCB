@@ -1,0 +1,140 @@
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  for-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          New-Item release.sha256
+          ren C:\mingw32 C:\_mingw32 -ErrorAction SilentlyContinue
+          ren C:\mingw64 C:\_mingw64 -ErrorAction SilentlyContinue
+          curl.exe -sSL https://github.com/niXman/mingw-builds-binaries/releases/download/15.2.0-rt_v13-rev1/i686-15.2.0-release-win32-dwarf-ucrt-rt_v13-rev1.7z -o (Join-Path $env:TEMP mingw32.7z)
+          curl.exe -sSL https://github.com/niXman/mingw-builds-binaries/releases/download/15.2.0-rt_v13-rev1/x86_64-15.2.0-release-win32-seh-ucrt-rt_v13-rev1.7z -o (Join-Path $env:TEMP mingw64.7z)
+          7z.exe x (Join-Path $env:TEMP mingw32.7z) -o"C:\" -y | Out-Null
+          7z.exe x (Join-Path $env:TEMP mingw64.7z) -o"C:\" -y | Out-Null
+
+      - name: Build
+        shell: powershell
+        run: |
+          cd .\Document\MinGW
+          $path = $env:PATH
+          $env:MINGW_ROOT = 'C:\mingw32'
+          foreach ($platform in 'x86', 'x64') {
+            $env:PATH = $env:MINGW_ROOT + '\bin;' + $path
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2026-11-28T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            Add-Content ..\..\release.sha256 ((Get-FileHash asyncbuf.exe            -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\asyncbuf.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash relayread.exe           -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\relayread.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash tsidmove.exe            -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\tsidmove.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash tspgtxt.exe             -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\tspgtxt.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash EpgDataCap_Bon.exe      -Algorithm SHA256).Hash.ToLower() + " *$platform\EpgDataCap_Bon.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash EpgDataCap3.dll         -Algorithm SHA256).Hash.ToLower() + " *$platform\EpgDataCap3.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash EpgDataCap3_Unicode.dll -Algorithm SHA256).Hash.ToLower() + " *$platform\EpgDataCap3_Unicode.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash EpgTimerAdminProxy.exe  -Algorithm SHA256).Hash.ToLower() + " *$platform\EpgTimerAdminProxy.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash EpgTimerPlugIn.tvtp     -Algorithm SHA256).Hash.ToLower() + " *$platform\EpgTimerPlugIn.tvtp")
+            Add-Content ..\..\release.sha256 ((Get-FileHash RecName_Macro.dll       -Algorithm SHA256).Hash.ToLower() + " *$platform\RecName\RecName_Macro.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash SendTSTCP.dll           -Algorithm SHA256).Hash.ToLower() + " *$platform\SendTSTCP.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash Write_Default.dll       -Algorithm SHA256).Hash.ToLower() + " *$platform\Write\Write_Default.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash Write_OneService.dll    -Algorithm SHA256).Hash.ToLower() + " *$platform\EdcbPlugIn\Write_OneService.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash EdcbPlugIn.tvtp         -Algorithm SHA256).Hash.ToLower() + " *$platform\EdcbPlugIn\EdcbPlugIn.tvtp")
+            Add-Content ..\..\release.sha256 ((Get-FileHash EpgTimerSrv.exe         -Algorithm SHA256).Hash.ToLower() + " *$platform\EpgTimerSrv.exe")
+            mingw32-make CC=gcc clean
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2026-02-19T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc lua52.dll
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2026-02-19T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc zlib52.dll
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2022-04-02T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc b24tovtt.exe
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2023-03-24T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc psisiarc.exe
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2026-04-22T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc psisimux.exe
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2026-06-11T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc tsmemseg.exe
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            Add-Content ..\..\release.sha256 ((Get-FileHash lua52.dll    -Algorithm SHA256).Hash.ToLower() + " *$platform\lua52.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash zlib52.dll   -Algorithm SHA256).Hash.ToLower() + " *$platform\zlib52.dll")
+            Add-Content ..\..\release.sha256 ((Get-FileHash b24tovtt.exe -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\b24tovtt.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash psisiarc.exe -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\psisiarc.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash psisimux.exe -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\psisimux.exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash tsmemseg.exe -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\tsmemseg.exe")
+            mingw32-make CC=gcc clean_extra
+            mingw32-make CC=gcc TSMEMSEG_WITHOUT_D=y tsmemseg.exe
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            $env:SOURCE_DATE_EPOCH = ([DateTimeOffset]'2026-04-28T00:00:00+09:00').ToUnixTimeSeconds()
+            mingw32-make CC=gcc tsreadex.exe
+            if ($LASTEXITCODE -ne 0) { Write-Error . }
+            Add-Content ..\..\release.sha256 ((Get-FileHash tsmemseg.exe -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\tsmemseg(without-d).exe")
+            Add-Content ..\..\release.sha256 ((Get-FileHash tsreadex.exe -Algorithm SHA256).Hash.ToLower() + " *$platform\Tools\tsreadex.exe")
+            mingw32-make CC=gcc clean_extra
+            cd ..\..\EpgTimer
+            & C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe EpgTimer.sln /p:Configuration=Release /p:Platform=$platform
+            Add-Content ..\release.sha256 ((Get-FileHash ..\$platform\Release\EpgTimer.exe -Algorithm SHA256).Hash.ToLower() + " *$platform\EpgTimer.exe")
+            cd ..\Document\MinGW
+            $env:MINGW_ROOT = 'C:\mingw64'
+          }
+          cd ..\..\
+          Add-Content release.sha256 ''
+          foreach ($platform in 'x86', 'x64') {
+            $pe = cat $platform\Release\EpgTimer.exe -Encoding Byte -TotalCount 140
+            if ([Convert]::ToBase64String($pe[0..135]) -cne 'TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAATAEDAA==') { Write-Error 'Unexpected PE.' }
+            Add-Content release.sha256 ("# $platform\EpgTimer.exe: " + ('tm={0:x2}{1:x2}{2:x2}{3:x2},id=' -f $pe[139], $pe[138], $pe[137], $pe[136]) + `
+                                        [Reflection.Assembly]::LoadFile((Join-Path $PWD.Path "$platform\Release\EpgTimer.exe")).ManifestModule.ModuleVersionId)
+          }
+
+      - name: Push commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $fileContent = [Convert]::ToBase64String([IO.File]::ReadAllBytes((Join-Path $PWD.Path 'release.sha256')))
+          $messageHeadline = 'Release ' + (Select-String .\Common\CommonResource.h -Pattern '^#define +EDCB_VERSION_TAG +"([^"]*)' | % { $_.Matches.Groups[1].Value })
+          $query = @'
+          mutation (
+            $expectedHeadOid: GitObjectID!,
+            $fileContent: Base64String!
+            $messageHeadline: String!,
+            $repositoryNameWithOwner: String!,
+          ) {
+            createCommitOnBranch(input: {
+              branch: {
+                repositoryNameWithOwner: $repositoryNameWithOwner,
+                branchName: "for-release"
+              },
+              message: {
+                headline: $messageHeadline
+              },
+              fileChanges: {
+                additions: [
+                  {
+                    path: "release.sha256",
+                    contents: $fileContent
+                  }
+                ]
+              },
+              expectedHeadOid: $expectedHeadOid
+            }) {
+              commit {
+                url
+              }
+            }
+          }
+          '@
+          gh api graphql `
+            -F expectedHeadOid="$env:GITHUB_SHA" `
+            -F fileContent="$fileContent" `
+            -F messageHeadline="$messageHeadline" `
+            -F repositoryNameWithOwner="$env:GITHUB_REPOSITORY" `
+            -f query="$query"
